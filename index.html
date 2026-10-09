@@ -1,0 +1,816 @@
+<!doctype html>
+<html lang="es" class="bloqueado">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Una rosa</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&family=Reenie+Beanie&display=swap');
+  :root { --bg:#060c1e; --crema:#f4ead2; --oro:#d9b66c; }
+  * { margin:0; box-sizing:border-box; }
+  html { background:var(--bg); }
+  body { margin:0; background:var(--bg); font-family:Georgia, 'Times New Roman', serif; color:var(--crema); overflow-x:hidden; }
+  canvas { position:fixed; inset:0; width:100%; height:100%; display:block; }
+  #lluvia { opacity:.9; transition:opacity 1s linear; }
+  #rosa { touch-action:pan-y; cursor:grab; }
+  #halo { position:fixed; contain:paint; left:50%; top:36%; width:min(115vmin,900px); height:min(115vmin,900px); transform:translate(-50%,-50%);
+    background:radial-gradient(circle, rgba(225,25,70,.30) 0%, rgba(160,15,50,.16) 32%, transparent 66%); opacity:0; pointer-events:none;
+    animation:respira 6s ease-in-out infinite; }
+  @keyframes respira { 50% { transform:translate(-50%,-50%) scale(1.06); } }
+  #marco { position:fixed; inset:0; pointer-events:none;
+    background:radial-gradient(ellipse at 50% 55%, transparent 30%, rgba(3,6,16,.85) 100%); }
+  #texto { position:fixed; left:0; right:0; bottom:9vh; text-align:center; pointer-events:none;
+    opacity:0; transition:opacity 2.5s ease; letter-spacing:.35em; font-size:clamp(14px,2.2vw,22px); text-transform:uppercase; }
+  #texto small { display:block; margin-top:1em; letter-spacing:.2em; font-size:.55em; color:var(--oro);
+    font-family:ui-monospace, Consolas, monospace; }
+  #texto.ver { opacity:1; }
+  /* ecuación tipo consola: se escribe letra a letra, aparece y se desvanece */
+  #ecuacion { position:fixed; left:20px; top:24px; max-width:calc(100vw - 172px); pointer-events:none;
+    font:10.5px/1.6 ui-monospace, 'Cascadia Mono', Consolas, monospace; letter-spacing:.02em; color:rgba(244,234,210,.5);
+    opacity:0; transition:opacity 1.4s ease; word-break:break-word; }
+  #ecuacion.ver { opacity:1; }
+  #ecuacion::before { content:'> '; color:rgba(217,182,108,.7); }
+  #ecuacion::after { content:''; display:inline-block; width:.55em; height:1.05em; margin-left:3px; vertical-align:text-bottom;
+    background:rgba(217,182,108,.7); animation:parpadeo 1s steps(2,start) infinite; }
+  @keyframes parpadeo { to { visibility:hidden; } }
+  button#repetir { position:fixed; right:16px; top:16px; width:44px; height:44px; padding:0; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; background:rgba(6,12,30,.5); color:var(--crema);
+    border:1px solid rgba(244,234,210,.35); font:24px/1 Georgia, serif; cursor:pointer; transition:border-color .3s, color .3s, transform .5s; }
+  button#vista { position:fixed; right:16px; top:70px; width:44px; height:44px; padding:0; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; background:rgba(6,12,30,.5); color:var(--crema);
+    border:1px solid rgba(244,234,210,.35); font:26px/1 Georgia, serif; cursor:pointer;
+    opacity:0; pointer-events:none; transition:opacity .6s, border-color .3s, color .3s; }
+  button#vista.ver { opacity:1; pointer-events:auto; }
+  button#vista:hover { border-color:var(--oro); color:var(--oro); }
+  button#repetir:hover { border-color:var(--oro); color:var(--oro); transform:rotate(-180deg); }
+
+  /* ---------- botones: zoom y pantalla completa ---------- */
+  button.rb { position:fixed; width:44px; height:44px; padding:0; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    background:rgba(6,12,30,.5); color:var(--crema); border:1px solid rgba(244,234,210,.35); cursor:pointer; touch-action:manipulation;
+    transition:opacity .5s ease, border-color .3s, color .3s; }
+  button.rb:hover { border-color:var(--oro); color:var(--oro); }
+  button.rb svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; pointer-events:none; }
+  button.rb.oculto { opacity:0; pointer-events:none; }
+  #pant { right:68px; top:16px; }
+  #musica { left:16px; bottom:16px; }
+  #musica .ico-off, #musica.silencio .ico-on { display:none; }
+  #musica.silencio .ico-off { display:block; }
+  #pant .ico-sal, #pant.activa .ico-ent { display:none; }
+  #pant.activa .ico-sal { display:block; }
+
+  /* ---------- pantalla final (debajo de la rosa) ---------- */
+  #pagina { position:relative; z-index:2; pointer-events:none; }
+  #portada { height:100vh; height:100svh; }
+  #final { min-height:100vh; min-height:100svh; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:12vh 24px 10vh; background:linear-gradient(to bottom, rgba(3,6,16,0), rgba(3,6,16,.80) 32%); text-align:left; }
+  #nota { width:min(640px,100%); font:15px/1.9 ui-monospace, 'Cascadia Mono', Consolas, monospace; color:rgba(244,234,210,.92); white-space:pre-wrap; min-height:19em; }
+  #notaTxt { display:block; }
+  #nota .par:first-child::before { content:'> '; color:rgba(217,182,108,.8); }
+  #nota .par { opacity:0; filter:blur(6px); transform:translateY(8px); transition:opacity 1.1s ease, filter 1.1s ease, transform 1.1s ease; }
+  #nota .esp { height:1.9em; }
+  #notaTxt.revelada .par { opacity:1; filter:none; transform:none; }
+  #nota.escribiendo::after { content:''; display:inline-block; width:.55em; height:1.05em; margin-left:3px; vertical-align:text-bottom;
+    background:rgba(217,182,108,.75); animation:parpadeo 1s steps(2,start) infinite; }
+  button#hoy { margin-top:26px; pointer-events:auto; background:transparent; color:var(--oro); cursor:pointer;
+    border:1px solid rgba(217,182,108,.5); border-radius:999px; padding:12px 22px; font:13px ui-monospace, Consolas, monospace; letter-spacing:.12em;
+    opacity:0; transition:opacity 1.2s ease, border-color .3s, background .3s; visibility:hidden; }
+  button#hoy.ver { opacity:1; visibility:visible; }
+  button#hoy:hover { border-color:var(--oro); background:rgba(217,182,108,.08); }
+  #hoyBox { width:min(640px,100%); margin-top:26px; opacity:0; transition:opacity 1.2s ease; }
+  #hoyBox.ver { opacity:1; }
+  #hoyFecha { font:12px ui-monospace, Consolas, monospace; color:rgba(217,182,108,.8); letter-spacing:.08em; }
+  #hoyFecha::before { content:'> '; }
+  #hoyTxt { margin-top:10px; font:italic 19px/1.6 Georgia, serif; color:var(--crema); min-height:3.2em; }
+  /* flechas (dibujadas con CSS: no dependen de ningún carácter especial) */
+  button#bajar, button#subir { position:fixed; left:50%; width:46px; height:46px; margin-left:-23px; padding:0; border-radius:50%;
+    background:rgba(6,12,30,.45); border:1px solid rgba(244,234,210,.35); cursor:pointer; pointer-events:none; opacity:0; transition:opacity .8s ease, border-color .3s; }
+  button#bajar { bottom:2.2vh; }
+  button#subir { top:14px; z-index:3; }
+  button#bajar.ver, button#subir.ver { opacity:1; pointer-events:auto; }
+  button#bajar:hover, button#subir:hover { border-color:var(--oro); }
+  button#bajar i, button#subir i { position:absolute; left:50%; top:50%; width:11px; height:11px; margin:-8px 0 0 -6px;
+    border-right:2px solid var(--crema); border-bottom:2px solid var(--crema); transform:rotate(45deg); }
+  button#subir i { margin-top:-3px; transform:rotate(-135deg); }
+  button#bajar.ver i { animation:baja 1.8s ease-in-out infinite; }
+  @keyframes baja { 50% { margin-top:-4px; } }
+  #texto.oculto, #ecuacion.oculto { opacity:0 !important; transition-duration:.5s; }
+  @media (max-width:600px) { #nota { font-size:13.5px; } #hoyTxt { font-size:17px; } }
+
+  /* ---------- pantalla de clave ---------- */
+  html.bloqueado, html.bloqueado body { overflow:hidden; }
+  #candado { position:fixed; inset:0; z-index:100; background:#060c1e; display:flex; align-items:center; justify-content:center; transition:opacity 1.6s ease; }
+  #candado.abierto { opacity:0; pointer-events:none; }
+  #candadoForm { width:min(340px,86vw); font:14px ui-monospace, 'Cascadia Mono', Consolas, monospace; color:rgba(244,234,210,.85); }
+  #candadoForm label { display:block; color:rgba(217,182,108,.85); letter-spacing:.08em; margin-bottom:14px; }
+  #candadoForm .fila { display:flex; align-items:center; gap:10px; border-bottom:1px solid rgba(244,234,210,.35); padding-bottom:6px; }
+  #candadoForm input { flex:1; min-width:0; background:transparent; border:0; outline:0; color:var(--crema); font:16px ui-monospace, Consolas, monospace; letter-spacing:.12em; }
+  #candadoForm button { position:relative; flex:none; width:38px; height:38px; border-radius:50%; background:transparent; border:1px solid rgba(244,234,210,.35); cursor:pointer; transition:border-color .3s; }
+  #candadoForm button:hover { border-color:var(--oro); }
+  #candadoForm button i { position:absolute; left:50%; top:50%; width:9px; height:9px; margin:-5px 0 0 -7px; border-right:2px solid var(--crema); border-top:2px solid var(--crema); transform:rotate(45deg); }
+  #candadoMsg { min-height:1.6em; margin-top:14px; color:rgba(244,234,210,.55); font-size:12px; letter-spacing:.06em; }
+  #candadoForm.sacudir { animation:sacudir .45s; }
+  @keyframes sacudir { 20%,60% { transform:translateX(-7px); } 40%,80% { transform:translateX(7px); } }
+  .pal { display:inline-block; margin-right:.3em; opacity:0; filter:blur(7px); transform:translateY(9px);
+    transition:opacity 1s ease, filter 1s ease, transform 1s ease; }
+  #hoyTxt.revelado .pal { opacity:1; filter:none; transform:none; }
+</style>
+</head>
+<body>
+<div id="candado">
+  <form id="candadoForm" autocomplete="off">
+    <label for="clave">&gt; clave</label>
+    <div class="fila">
+      <input id="clave" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Clave">
+      <button type="submit" aria-label="Entrar"><i></i></button>
+    </div>
+    <div id="candadoMsg" role="status"></div>
+  </form>
+</div>
+<canvas id="lluvia"></canvas>
+<div id="halo"></div>
+<canvas id="rosa"></canvas>
+<div id="marco"></div>
+<div id="ecuacion"></div>
+<button id="repetir" aria-label="Repetir">↻</button>
+<button id="vista" aria-label="Volver a la vista general">×</button>
+<button id="musica" class="rb" aria-label="Música de fondo">
+  <svg class="ico-on" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg>
+  <svg class="ico-off" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>
+</button>
+<button id="pant" class="rb" aria-label="Pantalla completa">
+  <svg class="ico-ent" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+  <svg class="ico-sal" viewBox="0 0 24 24"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>
+</button>
+
+<div id="texto">Estela<small>un rastro de luz</small></div>
+<button id="bajar" aria-label="Bajar"><i></i></button>
+<main id="pagina">
+  <section id="portada"></section>
+  <section id="final">
+    <button id="subir" aria-label="Volver a la rosa"><i></i></button>
+    <div id="nota"><span id="notaTxt"></span></div>
+    <button id="hoy">Mensaje de hoy</button>
+    <div id="hoyBox"><div id="hoyFecha"></div><div id="hoyTxt"></div></div>
+  </section>
+</main>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+/* ---------- 0. Candado: los textos privados están cifrados en secreto.json; la clave los descifra en tu navegador ---------- */
+/* Música de fondo: sonidos/musica.mp3 (si el archivo no existe, la página sigue sin música y el botón se oculta) */
+const VOL_MUSICA = 0.16;                                   // volumen (0–1): bájalo si la quieres más suave
+const musica = new Audio('sonidos/musica.mp3'); musica.loop = true; musica.preload = 'auto'; musica.volume = 0;
+let musicaOn = true, fadeId = 0;
+function fundirMusica(objetivo, ms) {
+  clearInterval(fadeId); const v0 = musica.volume, t0 = performance.now();
+  fadeId = setInterval(() => {
+    const k = Math.min((performance.now() - t0) / ms, 1);
+    musica.volume = Math.max(0, Math.min(1, v0 + (objetivo - v0) * k));
+    if (k >= 1) clearInterval(fadeId);
+  }, 50);
+}
+const btnMus = document.getElementById('musica');
+musica.addEventListener('error', () => { btnMus.style.display = 'none'; });
+btnMus.onclick = () => {
+  musicaOn = !musicaOn; btnMus.classList.toggle('silencio', !musicaOn);
+  fundirMusica(musicaOn ? VOL_MUSICA : 0, 600);
+  if (musicaOn && musica.paused) musica.play().catch(() => {});
+};
+document.addEventListener('visibilitychange', () => {       // al cambiar de pestaña se pausa
+  if (document.hidden) musica.pause();
+  else if (musicaOn && !document.documentElement.classList.contains('bloqueado')) musica.play().catch(() => {});
+});
+const normalizarClave = t => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+// si algo falla mientras el candado sigue visible, el error se muestra debajo del campo (en vez de quedarse mudo)
+addEventListener('error', e => { const m = document.getElementById('candadoMsg'), c = document.getElementById('candado'); if (m && c && !c.classList.contains('abierto')) m.textContent = 'error: ' + (e.message || 'desconocido'); });
+addEventListener('unhandledrejection', e => { const m = document.getElementById('candadoMsg'), c = document.getElementById('candado'); if (m && c && !c.classList.contains('abierto')) m.textContent = 'error: ' + ((e.reason && e.reason.message) || e.reason); });
+async function abrirCandado() {
+  const form = document.getElementById('candadoForm'), inp = document.getElementById('clave'), msg = document.getElementById('candadoMsg');
+  const dormirC = ms => new Promise(r => setTimeout(r, ms));
+  const b64 = t => Uint8Array.from(atob(t), c => c.charCodeAt(0));
+  if (location.protocol === 'file:') { msg.textContent = 'abre la web con abrir-web.bat (no con doble clic en el archivo)'; await new Promise(() => {}); }
+  let sobre;
+  try {
+    const r = await fetch('secreto.json', { cache: 'no-cache' });
+    if (!r.ok) throw new Error('sin archivo');
+    sobre = await r.json();
+  } catch (e) { msg.textContent = 'falta el archivo secreto.json'; await new Promise(() => {}); }
+  if (!(window.crypto && crypto.subtle)) { msg.textContent = 'abre esta página por https (o localhost)'; await new Promise(() => {}); }
+  inp.focus();
+  for (;;) {
+    // el toque en «Entrar» autoriza el audio: la música empieza en silencio y entra con fundido cuando se abre la rosa
+    const clave = await new Promise(res => { form.onsubmit = ev => { ev.preventDefault(); musica.volume = 0; musica.play().catch(() => {}); res(inp.value); }; });
+    msg.textContent = 'comprobando…'; form.classList.add('trabajando');
+    await dormirC(30);
+    try {
+      const mat = await crypto.subtle.importKey('raw', new TextEncoder().encode(normalizarClave(clave)), 'PBKDF2', false, ['deriveKey']);
+      const llave = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: b64(sobre.salt), iterations: sobre.iter, hash: 'SHA-256' }, mat, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+      const plano = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64(sobre.iv) }, llave, b64(sobre.ct));
+      msg.textContent = 'abriendo…'; inp.value = '';
+      return JSON.parse(new TextDecoder().decode(plano));
+    } catch (e) {
+      form.classList.remove('trabajando'); inp.value = ''; msg.textContent = 'clave incorrecta'; musica.pause();
+      form.classList.add('sacudir'); await dormirC(450); form.classList.remove('sacudir'); inp.focus();
+      await dormirC(500);                                   // frena los intentos rápidos
+    }
+  }
+}
+const PRIVADO = await abrirCandado();
+
+const QUIETA = location.search.includes('quieta');   // ?quieta → sin giro automático (para revisar de frente)
+
+/* ---------- 1. Lluvia de código (fondo 2D) ---------- */
+const lc = document.getElementById('lluvia');
+const lx = lc.getContext('2d');
+const simbolos = '0123456789πθφΣ∫√∞≈±=+−×÷xyrz'.split('');
+let cols, gotas;
+function ajustarLluvia() {
+  lc.width = innerWidth; lc.height = innerHeight;
+  cols = Math.floor(innerWidth / 18);
+  gotas = Array.from({ length: cols }, () => Math.random() * -50);
+  lx.fillStyle = '#060c1e'; lx.fillRect(0, 0, lc.width, lc.height);
+}
+ajustarLluvia();
+function pintarLluvia(dens = 1) {            // dens: 1 = llueve normal · 0 = ya no nacen gotas nuevas
+  lx.fillStyle = 'rgba(6,12,30,.16)';
+  lx.fillRect(0, 0, lc.width, lc.height);
+  lx.font = '14px ui-monospace, Consolas, monospace';
+  for (let i = 0; i < cols; i++) {
+    const s = simbolos[(Math.random() * simbolos.length) | 0];
+    lx.fillStyle = Math.random() < .06 ? '#f4ead2' : 'rgba(217,182,108,.55)';
+    lx.fillText(s, i * 18, gotas[i] * 18);
+    if (gotas[i] * 18 > lc.height && Math.random() > .975 && Math.random() < dens) gotas[i] = 0;
+    gotas[i] += .55;
+  }
+}
+
+/* ---------- 2. Geometría: todo son superficies (mallas triangulares) ---------- */
+const P = [], PB = [], C = [], G = [], UV = [], GR = [], I = [];   // posición abierta, posición cerrada (capullo), color, progreso, uv, rejilla, índices
+const col = new THREE.Color();
+function malla(nu, nv, f) {   // f(u, v, i, j) → { p, q?, c, g, grid? }
+  const base = P.length / 3;
+  for (let i = 0; i < nu; i++) for (let j = 0; j < nv; j++) {
+    const u = i / (nu - 1), v = j / (nv - 1);
+    const o = f(u, v, i, j), q = o.q || o.p, gr = o.grid || [0, 0];
+    P.push(o.p[0], o.p[1], o.p[2]); PB.push(q[0], q[1], q[2]);
+    C.push(o.c.r, o.c.g, o.c.b); G.push(o.g); UV.push(u, v); GR.push(gr[0], gr[1]);
+  }
+  for (let i = 0; i < nu - 1; i++) for (let j = 0; j < nv - 1; j++) {
+    const a = base + i * nv + j, b = a + 1, c = a + nv, d = c + 1;
+    I.push(a, c, b, b, c, d);
+  }
+}
+
+/* 2a. Flor: rosa matemática (Nylander).  φ(θ) = (π/2)·e^(−θ/8π) abre los pétalos poco a poco.
+       Capullo = misma fórmula con φ reducido (FAC_CERRADO · φ): pétalos casi verticales. */
+const ESC_XY = 1.0, ESC_Z = 1.30, FAC_CERRADO = 0.42;
+const cInt = new THREE.Color('#8a0a20'), cMed = new THREE.Color('#d8153a'),
+      cExt = new THREE.Color('#ff2a50'), cBorde = new THREE.Color('#ff8fa3');
+function puntoRosa(th, r, fac) {
+  const phi = fac * (Math.PI / 2) * Math.exp(-th / (8 * Math.PI));
+  const m = (3.6 * th) % (2 * Math.PI);
+  const xx = 1 - 0.5 * Math.pow(1.25 * Math.pow(1 - m / Math.PI, 2) - 0.25, 2);
+  const yy = 1.95653 * r * r * Math.pow(1.27689 * r - 1, 2) * Math.sin(phi);
+  const R1 = xx * (r * Math.sin(phi) + yy * Math.cos(phi));
+  const Z  = xx * (r * Math.cos(phi) - yy * Math.sin(phi));
+  return [R1 * Math.sin(th) * ESC_XY, Z * ESC_Z, R1 * Math.cos(th) * ESC_XY];
+}
+malla(2600, 60, (u, v) => {
+  const th = u * 20 * Math.PI, r = v;
+  col.copy(cInt).lerp(cMed, Math.min(1, r * 1.5));
+  col.lerp(cExt, Math.pow(r, 2) * 0.7 * (1 - 0.4 * u));
+  col.lerp(cBorde, Math.max(0, r - .9) / .1 * .4);
+  return { p: puntoRosa(th, r, 1), q: puntoRosa(th, r, FAC_CERRADO), c: col.clone(), g: (1 - u) * 0.70 + r * 0.04, grid: [340, 36] };
+});
+
+/* 2b. Tallo (corto y delgado) */
+const LARGO_TALLO = 2.0;
+const cTA = new THREE.Color('#1f6a3c'), cTB = new THREE.Color('#58b878');
+malla(14, 70, (u, v) => {
+  const a = u * 2 * Math.PI, rr = 0.034 - 0.010 * v;
+  return { p: [rr * Math.cos(a), -0.02 - v * LARGO_TALLO, rr * Math.sin(a)],
+           c: col.copy(cTA).lerp(cTB, Math.max(0, Math.cos(a - 0.9)) * 0.7).clone(), g: 0.74 + v * 0.12 };
+});
+
+/* 2b'. Espinas: conos pequeños, curvados hacia abajo, en espiral sobre el tallo */
+const cEsp = new THREE.Color('#5a2420');
+for (let k = 0; k < 4; k++) {
+  const hv = 0.14 + k * 0.22, a0 = 0.5 + k * 2.4;
+  const rr = 0.034 - 0.010 * hv, y0 = -0.02 - hv * LARGO_TALLO;
+  const d = new THREE.Vector3(Math.cos(a0), -0.45, Math.sin(a0)).normalize();
+  const e1 = new THREE.Vector3().crossVectors(d, new THREE.Vector3(0, 1, 0)).normalize();
+  const e2 = new THREE.Vector3().crossVectors(d, e1).normalize();
+  malla(8, 6, (u, v) => {
+    const ang = u * 2 * Math.PI, rad = 0.009 * Math.pow(1 - v, 1.2);
+    const cen = new THREE.Vector3(rr * Math.cos(a0), y0, rr * Math.sin(a0)).addScaledVector(d, 0.05 * v);
+    cen.y -= 0.015 * v * v;                                              // punta curvada hacia abajo
+    cen.addScaledVector(e1, Math.cos(ang) * rad).addScaledVector(e2, Math.sin(ang) * rad);
+    return { p: [cen.x, cen.y, cen.z], c: cEsp.clone(), g: 0.80 + k * 0.01 };
+  });
+}
+
+/* 2c. Hojas: una hoja ovalada por lado, en un plano que mira al espectador (+z) */
+const HOJAS = [   // lado: +1 derecha, −1 izquierda
+  { y0: -0.70, lado:  1, len: 0.64, wid: 0.20, th0: 0.80, caida: 0.90, giro:  0.20 },
+  { y0: -1.20, lado: -1, len: 0.68, wid: 0.21, th0: 0.78, caida: 0.90, giro: -0.20 },
+  { y0: -1.62, lado:  1, len: 0.48, wid: 0.15, th0: 0.72, caida: 0.85, giro:  0.15 },
+];
+const cHA = new THREE.Color('#10502d'), cHB = new THREE.Color('#2f9a58'), cVena = new THREE.Color('#9fd99a');
+const NSH = 90, NUH = 40;
+HOJAS.forEach((h, idx) => {
+  const prog = 0.80 + idx * 0.05;
+  const cx = new Float32Array(NSH), cy = new Float32Array(NSH), th = new Float32Array(NSH);
+  let x = 0.03 * h.lado, y = h.y0;
+  for (let j = 0; j < NSH; j++) {
+    const S = j / (NSH - 1);
+    th[j] = h.th0 - h.caida * Math.pow(S, 2.2);
+    cx[j] = x; cy[j] = y;
+    x += h.lado * Math.cos(th[j]) * h.len / NSH; y += Math.sin(th[j]) * h.len / NSH;
+  }
+  const cg = Math.cos(h.giro), sg = Math.sin(h.giro);
+  malla(NUH, NSH, (u, S, i, j) => {
+    const U = u * 2 - 1;
+    const Sp = Math.max(0, (S - 0.10) / 0.90);
+    const w = h.wid * Math.pow(Math.sin(Math.PI * Math.pow(Sp, 0.68)), 0.9) * (1 + 0.05 * Math.sin(Sp * 62) * Sp);
+    const lat = U * Math.max(w, 0.005);
+    const px = -Math.sin(th[j]) * h.lado, py = Math.cos(th[j]);
+    const X = cx[j] + lat * px, Y = cy[j] + lat * py;
+    const Z = 0.03 - Math.abs(U) * w * 0.30 + S * 0.08;
+    const vena = Math.exp(-(U * U) / 0.005);
+    const lateral = Math.pow(Math.abs(Math.sin(Sp * 30 - Math.abs(U) * 7)), 16) * (1 - Math.abs(U)) * 0.28;
+    col.copy(cHA).lerp(cHB, (1 - Math.abs(U)) * 0.6 * (0.5 + 0.5 * Sp));
+    col.lerp(cVena, Math.min(1, vena * 0.6 + lateral));
+    return { p: [X * cg + Z * sg, Y, -X * sg + Z * cg], c: col.clone(), g: prog + S * 0.05, grid: idx === 1 ? [0, 1] : [0, 0] };
+  });
+});
+
+/* 2d. Sépalos bajo la flor */
+for (let k = 0; k < 5; k++) {
+  const az = k * (2 * Math.PI / 5) + 0.3, len = 0.42, wid = 0.05;
+  malla(9, 26, (u, S) => {
+    const U = u * 2 - 1, d = len * S;
+    const w = wid * Math.pow(Math.sin(Math.PI * Math.pow(S, 0.72)), 0.85);
+    const rad = 0.03 + d, z = -0.05 * len * S - 0.5 * len * S * S + Math.abs(U) * w * 0.3, lat = U * w;
+    return { p: [rad * Math.cos(az) - lat * Math.sin(az), z, rad * Math.sin(az) + lat * Math.cos(az)],
+             c: col.copy(cHA).lerp(cHB, 0.5 * S).clone(), g: 0.70 };
+  });
+}
+
+/* 2e. Normales: se calculan para la pose abierta y para la cerrada; el shader las mezcla */
+const NV_TOTAL = P.length / 3;
+const geo = new THREE.BufferGeometry();
+geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(P), 3));
+geo.setIndex(I);
+geo.computeVertexNormals();
+const geoB = new THREE.BufferGeometry();
+geoB.setAttribute('position', new THREE.BufferAttribute(new Float32Array(PB), 3));
+geoB.setIndex(I);
+geoB.computeVertexNormals();
+geo.setAttribute('aPosB', new THREE.BufferAttribute(new Float32Array(PB), 3));
+geo.setAttribute('aNormB', geoB.getAttribute('normal'));
+geo.setAttribute('aColor', new THREE.BufferAttribute(new Float32Array(C), 3));
+geo.setAttribute('aProg', new THREE.BufferAttribute(new Float32Array(G), 1));
+geo.setAttribute('aUV', new THREE.BufferAttribute(new Float32Array(UV), 2));
+geo.setAttribute('aGrid', new THREE.BufferAttribute(new Float32Array(GR), 2));
+
+/* 2f. Lluvia de puntos de luz (1 de cada 4 vértices): cae y forma la rosa antes de que se solidifique */
+const PASO = 4, NPT = Math.floor(NV_TOTAL / PASO);
+const ppos = new Float32Array(NPT * 3), pposB = new Float32Array(NPT * 3), pcol = new Float32Array(NPT * 3), pprog = new Float32Array(NPT);
+for (let k = 0; k < NPT; k++) {
+  const v = k * PASO;
+  ppos.set([P[v * 3], P[v * 3 + 1], P[v * 3 + 2]], k * 3);
+  pposB.set([PB[v * 3], PB[v * 3 + 1], PB[v * 3 + 2]], k * 3);
+  pcol.set([C[v * 3], C[v * 3 + 1], C[v * 3 + 2]], k * 3);
+  pprog[k] = G[v];
+}
+const geoP = new THREE.BufferGeometry();
+geoP.setAttribute('position', new THREE.BufferAttribute(ppos, 3));
+geoP.setAttribute('aPosB', new THREE.BufferAttribute(pposB, 3));
+geoP.setAttribute('aColor', new THREE.BufferAttribute(pcol, 3));
+geoP.setAttribute('aProg', new THREE.BufferAttribute(pprog, 1));
+
+/* ---------- 3. Escena: superficie con luz propia + frente dorado de crecimiento ---------- */
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('rosa'), antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+const escena = new THREE.Scene();
+const camara = new THREE.PerspectiveCamera(40, 1, .1, 50);
+camara.position.set(0, 0.6, 7.6);
+renderer.domElement.addEventListener('wheel', e => { if (scrollY > 8) e.stopImmediatePropagation(); }, { capture: true });   // arriba: la rueda hace zoom a la rosa; ya abajo (pantalla final): desplaza la página
+const ctl = new OrbitControls(camara, renderer.domElement);
+ctl.target.set(0, -0.55, 0);
+ctl.enableDamping = true; ctl.enablePan = false; ctl.minDistance = 0.5; ctl.maxDistance = 13;
+ctl.autoRotate = false; ctl.autoRotateSpeed = .7;
+let tocando = false, reposo = 0;
+ctl.addEventListener('start', () => { tocando = true; });
+ctl.addEventListener('end', () => { tocando = false; reposo = performance.now(); });
+
+/* 2h. Mensaje escrito en la cara de abajo de un pétalo: se dibujan en un lienzo y se usan como textura (u, r) */
+const MENSAJE = PRIVADO.petalo;                                  // viene cifrado en secreto.json
+const PARCHE  = [0.0312, 0.0522, 0.45, 0.97];                      // u0, u1, r0, r1: pétalo de la espalda (θ ≈ 150°)
+const FUENTE = '"Dancing Script","Segoe Script","Brush Script MT","Lucida Handwriting",cursive';
+try { await Promise.race([document.fonts.load('600 100px "Dancing Script"'), new Promise(r => setTimeout(r, 2500))]); } catch (e) { /* sin internet: letra de respaldo */ }
+function crearTextura(lineas) {
+  const lienzo = document.createElement('canvas');
+  lienzo.width = 1792; lienzo.height = 1280;
+  const ctx = lienzo.getContext('2d');
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = '600 205px ' + FUENTE;
+  ctx.fillStyle = '#fff0f3';
+  ctx.shadowColor = 'rgba(110,0,25,.55)'; ctx.shadowBlur = 10;
+  const alto = 235, y0 = lienzo.height / 2 - (lineas.length - 1) * alto / 2;
+  lineas.forEach((linea, i) => ctx.fillText(linea, lienzo.width / 2, y0 + i * alto));
+  const tex = new THREE.CanvasTexture(lienzo);
+  tex.anisotropy = 8; tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+const texTexto = crearTextura(MENSAJE);
+
+/* 2h'. Reverso de una hoja: texto a mano y desgastado (textura rústica) */
+const TEXTO_HOJA = PRIVADO.hoja;                                  // viene cifrado en secreto.json
+const PARCHE_H = [0.12, 0.87, 0.53, 0.98];                        // s0, s1 (a lo largo de la hoja), u0, u1 (a lo ancho): fuera del nervio central, que es claro
+try { await Promise.race([document.fonts.load('230px "Reenie Beanie"'), new Promise(r => setTimeout(r, 2500))]); } catch (e) { /* sin internet: letra de respaldo */ }
+function crearTexturaRustica(lineas) {
+  const lienzo = document.createElement('canvas');
+  lienzo.width = 1536; lienzo.height = 512;
+  const ctx = lienzo.getContext('2d');
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = '205px "Reenie Beanie","Segoe Print","Bradley Hand","Comic Sans MS",cursive';
+  ctx.fillStyle = '#f1e4bd';
+  ctx.save(); ctx.translate(lienzo.width / 2, lienzo.height / 2); ctx.rotate(-0.05);
+  const alto = 215, y0 = -(lineas.length - 1) * alto / 2;
+  lineas.forEach((l, i) => ctx.fillText(l, i === 0 ? -150 : 0, y0 + i * alto));   // "para" un poco a la izquierda
+  ctx.restore();
+  ctx.globalCompositeOperation = 'destination-out';                                // desgaste: puntos que "comen" la tinta
+  for (let k = 0; k < 900; k++) {
+    ctx.globalAlpha = Math.random() * 0.5;
+    ctx.beginPath(); ctx.arc(Math.random() * lienzo.width, Math.random() * lienzo.height, 1 + Math.random() * 4, 0, 6.2832); ctx.fill();
+  }
+  const tex = new THREE.CanvasTexture(lienzo);
+  tex.anisotropy = 8; tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+const texHoja = crearTexturaRustica(TEXTO_HOJA);
+
+
+const mat = new THREE.ShaderMaterial({
+  side: THREE.DoubleSide,
+  uniforms: { uProg: { value: 0 }, uBloom: { value: 0 }, uT: { value: 0 }, uPunt: { value: new THREE.Vector4(0, 0, 1, 0) }, uTexto: { value: texTexto }, uTexHoja: { value: texHoja }, uParcheH: { value: new THREE.Vector4(...PARCHE_H) }, uParche: { value: new THREE.Vector4(...PARCHE) } },
+  vertexShader: `
+    attribute vec3 aColor, aPosB, aNormB; attribute float aProg; attribute vec2 aUV, aGrid;
+    uniform float uBloom, uT;
+    varying vec3 vC; varying float vP; varying vec3 vN; varying vec3 vV; varying vec2 vUV; varying vec2 vG; varying vec3 vNW;
+    void main() {
+      vec3 p = mix(aPosB, position, uBloom);
+      vec3 n = normalize(mix(aNormB, normal, uBloom));
+      // brisa muy sutil: el tallo se mece desde abajo; pétalos y hojas ondulan más en las puntas
+      float h = clamp((p.y + 2.1) / 2.6, 0.0, 1.0);
+      p.x += sin(uT * 0.8) * 0.030 * h * h;
+      p.z += cos(uT * 0.65) * 0.018 * h * h;
+      float d = length(p.xz);
+      float punta = smoothstep(0.1, 1.1, d);
+      p.y += sin(uT * 1.3 + d * 4.0 + p.x * 3.0) * 0.012 * punta;
+      p.x += sin(uT * 1.1 + p.y * 5.0) * 0.005 * punta;
+      p.z += cos(uT * 0.9 + p.x * 5.0) * 0.005 * punta;
+      vec4 mv = modelViewMatrix * vec4(p, 1.0);
+      vN = normalize(normalMatrix * n); vNW = n;
+      vV = -mv.xyz; vC = aColor; vP = aProg; vUV = aUV; vG = aGrid;
+      gl_Position = projectionMatrix * mv;
+    }`,
+  fragmentShader: `
+    uniform float uProg; uniform sampler2D uTexto; uniform vec4 uParche; uniform vec4 uPunt; uniform sampler2D uTexHoja; uniform vec4 uParcheH;
+    varying vec3 vC; varying float vP; varying vec3 vN; varying vec3 vV; varying vec2 vUV; varying vec2 vG; varying vec3 vNW;
+    void main() {
+      float k = uProg - vP;
+      if (k < 0.0) discard;                                   // aún no se ha solidificado aquí
+      vec3 N = normalize(vN); if (!gl_FrontFacing) N = -N;
+      vec3 V = normalize(vV);
+      vec3 L1 = normalize(vec3(-0.4, 0.7, 0.6)), L2 = normalize(vec3(0.6, -0.2, 0.4));
+      float d1 = max(dot(N, L1), 0.0), d2 = max(dot(N, L2), 0.0);
+      float rim = pow(1.0 - max(dot(N, V), 0.0), 2.5);
+      float spec = pow(max(dot(N, normalize(L1 + V)), 0.0), 28.0);
+      vec3 c = vC * (0.46 + 0.50 * d1 + 0.16 * d2) + vec3(1.0, 0.45, 0.55) * rim * 0.10 + vec3(1.0) * spec * 0.08;
+      // luz que sigue al dedo / mouse (uPunt.xyz = dirección en el espacio de la cámara, uPunt.w = intensidad)
+      float d3 = max(dot(N, uPunt.xyz), 0.0);
+      float s3 = pow(max(dot(N, normalize(uPunt.xyz + V)), 0.0), 22.0);
+      c += (vC * 0.60 * d3 + vec3(1.0, 0.78, 0.82) * s3 * 0.40) * uPunt.w;
+      // rejilla matemática (líneas de θ y de r), solo donde aGrid > 0
+      if (vG.x > 0.0) {
+        vec2 g = vUV * vG;
+        vec2 f = abs(fract(g - 0.5) - 0.5) / (fwidth(g) * 0.75);
+        float linea = 1.0 - min(min(f.x, f.y), 1.0);
+        c = mix(c, c * vec3(0.50, 0.22, 0.28), linea * 0.70);   // líneas: rojo más oscuro que el pétalo
+      }
+      // mensaje escrito en la cara de abajo de un pétalo (solo en la flor, dentro del parche u0..u1, r0..r1)
+      vec3 nVis = gl_FrontFacing ? vNW : -vNW;                  // normal de la cara que ve la cámara (mundo)
+      float abajo = 1.0 - smoothstep(-0.45, -0.15, nVis.y);      // 1 solo si esa cara mira hacia abajo
+      vec2 tt = vec2((vUV.x - uParche.x) / (uParche.y - uParche.x), (vUV.y - uParche.z) / (uParche.w - uParche.z));
+      vec4 tx = texture2D(uTexto, clamp(tt, 0.0, 1.0));
+      float dentro = step(0.0, tt.x) * step(tt.x, 1.0) * step(0.0, tt.y) * step(tt.y, 1.0) * step(0.5, vG.x);
+      c = mix(c, tx.rgb, tx.a * dentro * abajo);
+      // escrito rústico en el reverso de una hoja (aGrid.y = 1 marca esa hoja; la cara de atrás mira a −z)
+      vec2 th2 = vec2((vUV.y - uParcheH.x) / (uParcheH.y - uParcheH.x), (vUV.x - uParcheH.z) / (uParcheH.w - uParcheH.z));
+      vec4 tH = texture2D(uTexHoja, clamp(th2, 0.0, 1.0));
+      float dentroH = step(0.0, th2.x) * step(th2.x, 1.0) * step(0.0, th2.y) * step(th2.y, 1.0) * step(0.5, vG.y) * (1.0 - step(0.5, vG.x));
+      float revesH = 1.0 - smoothstep(-0.5, -0.1, nVis.z);
+      c = mix(c, tH.rgb * 0.95, tH.a * dentroH * revesH * 0.9);
+      float borde = 1.0 - smoothstep(0.0, 0.04, k);           // frente dorado que avanza
+      c = mix(c, vec3(1.0, 0.72, 0.80), borde * 0.80);
+      gl_FragColor = vec4(c, 1.0);
+      #include <colorspace_fragment>
+    }`
+});
+const rosa = new THREE.Mesh(geo, mat);
+escena.add(rosa);
+
+const matP = new THREE.ShaderMaterial({
+  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+  uniforms: { uProg: { value: 0 }, uBloom: { value: 0 }, uA: { value: 1 }, uSize: { value: 2.6 }, uPR: { value: renderer.getPixelRatio() } },
+  vertexShader: `
+    attribute vec3 aColor, aPosB; attribute float aProg;
+    uniform float uProg, uBloom, uA, uSize, uPR;
+    varying vec3 vC; varying float vA;
+    void main() {
+      vec3 p = mix(aPosB, position, uBloom);
+      float k = clamp((uProg - aProg) / 0.14, 0.0, 1.0);
+      float e = 1.0 - pow(1.0 - k, 3.0);
+      p.y += (1.0 - e) * 4.5;                                  // los puntos caen desde arriba
+      vec4 mv = modelViewMatrix * vec4(p, 1.0);
+      gl_Position = projectionMatrix * mv;
+      gl_PointSize = uSize * uPR * (6.0 / -mv.z) * (0.4 + 0.6 * e);
+      vC = mix(aColor, vec3(1.0, 0.70, 0.78), 0.40); vA = k * uA;
+    }`,
+  fragmentShader: `
+    varying vec3 vC; varying float vA;
+    void main() {
+      float d = length(gl_PointCoord - 0.5);
+      if (d > 0.5) discard;
+      float a = smoothstep(0.5, 0.05, d) * vA;
+      gl_FragColor = vec4(vC * 1.2, a);
+      #include <colorspace_fragment>
+    }`
+});
+escena.add(new THREE.Points(geoP, matP));
+
+/* 2g. Polvo de luz: partículas lentas que suben alrededor de la rosa cuando se abre */
+const NPOLVO = 240;
+const dpos = new Float32Array(NPOLVO * 3), dsem = new Float32Array(NPOLVO * 4);
+for (let k = 0; k < NPOLVO; k++) {
+  const ang = Math.random() * Math.PI * 2, rad = 0.7 + Math.random() * 1.9;
+  dpos.set([Math.cos(ang) * rad, -1.6 + Math.random() * 4.2, Math.sin(ang) * rad], k * 3);
+  dsem.set([0.05 + Math.random() * 0.09, Math.random(), 1.2 + Math.random() * 1.8, 0.05 + Math.random() * 0.12], k * 4);   // velocidad, fase, tamaño, deriva
+}
+const geoD = new THREE.BufferGeometry();
+geoD.setAttribute('position', new THREE.BufferAttribute(dpos, 3));
+geoD.setAttribute('aS', new THREE.BufferAttribute(dsem, 4));
+const matD = new THREE.ShaderMaterial({
+  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+  uniforms: { uT: { value: 0 }, uA: { value: 0 }, uPR: { value: renderer.getPixelRatio() } },
+  vertexShader: `
+    attribute vec4 aS;
+    uniform float uT, uA, uPR;
+    varying float vA;
+    void main() {
+      vec3 p = position;
+      float y01 = mod(position.y + 1.6 + uT * aS.x, 4.2) / 4.2;        // sube y vuelve a empezar
+      p.y = -1.6 + y01 * 4.2;
+      p.x += sin(uT * 0.4 + aS.y * 6.2832) * aS.w;
+      p.z += cos(uT * 0.35 + aS.y * 6.2832) * aS.w;
+      vec4 mv = modelViewMatrix * vec4(p, 1.0);
+      gl_Position = projectionMatrix * mv;
+      gl_PointSize = aS.z * uPR * (6.0 / -mv.z);
+      float extremos = smoothstep(0.0, 0.25, y01) * smoothstep(1.0, 0.75, y01);
+      vA = extremos * uA * (0.45 + 0.55 * sin(uT * 1.6 + aS.y * 40.0));   // titilan
+    }`,
+  fragmentShader: `
+    varying float vA;
+    void main() {
+      float d = length(gl_PointCoord - 0.5);
+      if (d > 0.5) discard;
+      gl_FragColor = vec4(vec3(1.0, 0.72, 0.80), smoothstep(0.5, 0.0, d) * vA * 0.7);
+      #include <colorspace_fragment>
+    }`
+});
+escena.add(new THREE.Points(geoD, matD));
+
+
+function ajustar() {
+  renderer.setSize(innerWidth, innerHeight, false);
+  camara.aspect = innerWidth / innerHeight;
+  if (!ajustar.hecho) { camara.position.set(0, 0.53, innerWidth < 700 ? 9.0 : 6.7); ajustar.hecho = true; }   // distancia inicial según pantalla
+  camara.updateProjectionMatrix();
+  ajustarLluvia();
+}
+addEventListener('resize', ajustar); ajustar();
+
+/* ---------- 4. Ecuaciones sutiles: una a la vez, aparecen y se desvanecen ---------- */
+const ECS = [
+  'phi(theta) = (pi/2) * exp(-theta / 8pi)',
+  'X(theta) = 1 - 1/2 * [ 5/4 * (1 - (3.6 theta mod 2pi) / pi)^2 - 1/4 ]^2',
+  '(x, y, z) = ( R sin(theta), R cos(theta), X * (r cos(phi) - y sin(phi)) )'
+];
+const elEc = document.getElementById('ecuacion');
+let cicloId = 0;
+const dormir = ms => new Promise(r => setTimeout(r, ms));
+async function ciclo() {          // las 3 ecuaciones salen UNA sola vez, mientras se genera la rosa
+  const id = ++cicloId;
+  await dormir(700);
+  for (let i = 0; i < ECS.length && id === cicloId; i++) {
+    const txt = ECS[i];
+    elEc.textContent = ''; elEc.classList.add('ver');
+    for (let k = 1; k <= txt.length && id === cicloId; k++) { elEc.textContent = txt.slice(0, k); await dormir(30); }
+    await dormir(2000);
+    elEc.classList.remove('ver');
+    await dormir(900);
+  }
+}
+
+/* ---------- 4b. Destello sobre el pétalo + cámara que vuela hasta el mensaje ---------- */
+const thC = (PARCHE[0] + PARCHE[1]) / 2 * 20 * Math.PI, rC = (PARCHE[2] + PARCHE[3]) / 2;
+const pC = new THREE.Vector3(...puntoRosa(thC, rC, 1));
+const dT = new THREE.Vector3(...puntoRosa(thC + 0.02, rC, 1)).sub(pC);
+const dR = new THREE.Vector3(...puntoRosa(thC, rC + 0.02, 1)).sub(pC);
+const nC = new THREE.Vector3().crossVectors(dT, dR).normalize();
+if (nC.y > 0) nC.negate();                                          // normal hacia abajo (cara de abajo del pétalo)
+
+const geoM = new THREE.BufferGeometry();
+geoM.setAttribute('position', new THREE.BufferAttribute(new Float32Array([pC.x + nC.x * 0.04, pC.y + nC.y * 0.04, pC.z + nC.z * 0.04]), 3));
+const matM = new THREE.ShaderMaterial({
+  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+  uniforms: { uT: { value: 0 }, uA: { value: 0 }, uPR: { value: renderer.getPixelRatio() } },
+  vertexShader: `
+    uniform float uT, uA, uPR;
+    varying float vA;
+    void main() {
+      vec4 mv = modelViewMatrix * vec4(position, 1.0);
+      gl_Position = projectionMatrix * mv;
+      gl_PointSize = (24.0 + 8.0 * sin(uT * 2.2)) * uPR * (7.6 / -mv.z);
+      vA = uA * (0.65 + 0.35 * sin(uT * 2.2));
+    }`,
+  fragmentShader: `
+    varying float vA;
+    void main() {
+      float d = length(gl_PointCoord - 0.5);
+      float g = exp(-d * d * 38.0);
+      gl_FragColor = vec4(vec3(1.0, 0.86, 0.90), g * vA);
+      #include <colorspace_fragment>
+    }`
+});
+escena.add(new THREE.Points(geoM, matM));
+
+let modo = 'general', vuelo = null;                                   // 'general' | 'lectura'
+const posGeneral = new THREE.Vector3(), objGeneral = new THREE.Vector3();
+const vistaBtn = document.getElementById('vista');
+function volarA(p1, o1, ms = 1800) { vuelo = { t0: performance.now(), ms, p0: camara.position.clone(), o0: ctl.target.clone(), p1, o1 }; }
+function irALeer() {
+  if (modo === 'lectura') return;
+  modo = 'lectura'; posGeneral.copy(camara.position); objGeneral.copy(ctl.target);
+  volarA(pC.clone().addScaledVector(nC, 2.08), pC.clone());   // distancia de lectura: texto 40 % más pequeño que al principio (1.25 → 2.08)
+  vistaBtn.classList.add('ver');
+}
+function volver() { modo = 'general'; volarA(posGeneral.clone(), objGeneral.clone()); vistaBtn.classList.remove('ver'); }
+vistaBtn.onclick = volver;
+function pasoVuelo() {
+  if (!vuelo) return;
+  const k = Math.min((performance.now() - vuelo.t0) / vuelo.ms, 1);
+  const e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+  camara.position.lerpVectors(vuelo.p0, vuelo.p1, e);
+  ctl.target.lerpVectors(vuelo.o0, vuelo.o1, e);
+  if (k >= 1) vuelo = null;
+}
+// toque o clic breve sobre el destello (no cuenta si fue un arrastre)
+let pulso = null;
+const lienzoRosa = document.getElementById('rosa');
+lienzoRosa.addEventListener('pointerdown', e => { pulso = { x: e.clientX, y: e.clientY, t: performance.now() }; });
+lienzoRosa.addEventListener('pointerup', e => {
+  if (!pulso || modo === 'lectura' || matM.uniforms.uA.value < 0.5) return;
+  if (Math.hypot(e.clientX - pulso.x, e.clientY - pulso.y) > 8 || performance.now() - pulso.t > 500) return;
+  const v = pC.clone().project(camara);
+  const sx = (v.x * 0.5 + 0.5) * innerWidth, sy = (-v.y * 0.5 + 0.5) * innerHeight;
+  if (v.z < 1 && Math.hypot(e.clientX - sx, e.clientY - sy) < 44) irALeer();
+});
+
+/* ---------- 4c. Luz que sigue al puntero (se enciende al moverlo y se apaga 2,5 s después) ---------- */
+let px = 0, py = 0.3, inten = 0, ultimoMov = -9999;
+addEventListener('pointermove', e => { px = e.clientX / innerWidth * 2 - 1; py = -(e.clientY / innerHeight * 2 - 1); ultimoMov = performance.now(); });
+
+/* ---------- 4d. Pantalla final: carta (consola) y "mensaje de hoy" ---------- */
+const NOTA = PRIVADO.nota;                                        // viene cifrado en secreto.json
+const MENSAJES = PRIVADO.frases;                                  // viene cifrado en secreto.json
+const elNota = document.getElementById('nota'), elNotaTxt = document.getElementById('notaTxt');
+const btnHoy = document.getElementById('hoy'), hoyBox = document.getElementById('hoyBox');
+const hoyFecha = document.getElementById('hoyFecha'), hoyTxt = document.getElementById('hoyTxt');
+const bajarBtn = document.getElementById('bajar'), subirBtn = document.getElementById('subir');
+bajarBtn.onclick = () => scrollTo({ top: innerHeight, behavior: 'smooth' });
+subirBtn.onclick = () => scrollTo({ top: 0, behavior: 'smooth' });
+
+function revelarNota() {          // la carta aparece párrafo por párrafo: sale del desenfoque y sube suavemente (sin sonido)
+  elNotaTxt.textContent = '';
+  let t = 0.2;
+  NOTA.forEach(linea => {
+    const d = document.createElement('div');
+    if (linea === '') { d.className = 'esp'; elNotaTxt.appendChild(d); return; }
+    d.className = 'par'; d.textContent = linea; d.style.transitionDelay = t.toFixed(2) + 's'; t += 0.85;
+    elNotaTxt.appendChild(d);
+  });
+  requestAnimationFrame(() => requestAnimationFrame(() => elNotaTxt.classList.add('revelada')));
+  setTimeout(() => btnHoy.classList.add('ver'), (t + 1.2) * 1000);
+}
+let notaIniciada = false;
+new IntersectionObserver(es => {
+  if (es[0].isIntersecting && !notaIniciada) { notaIniciada = true; revelarNota(); }
+}, { threshold: 0.55 }).observe(document.getElementById('final'));
+
+btnHoy.onclick = async () => {
+  btnHoy.classList.remove('ver');
+  const hoy = new Date();
+  const diaDelAno = Math.floor((hoy - new Date(hoy.getFullYear(), 0, 0)) / 86400000);
+  hoyFecha.textContent = 'Hoy, ' + hoy.toLocaleDateString('es-PE', { day: 'numeric', month: 'long' });
+  hoyBox.classList.add('ver');
+  const frase = MENSAJES[diaDelAno % MENSAJES.length];
+  hoyTxt.classList.remove('revelado'); hoyTxt.textContent = '';
+  frase.split(' ').forEach((pal, i) => {                  // cada palabra aparece con un pequeño retraso: sale del desenfoque y sube suavemente
+    const sp = document.createElement('span'); sp.className = 'pal'; sp.textContent = pal;
+    sp.style.transitionDelay = (0.35 + i * 0.13).toFixed(2) + 's'; hoyTxt.appendChild(sp);
+  });
+  requestAnimationFrame(() => requestAnimationFrame(() => hoyTxt.classList.add('revelado')));
+};
+
+/* ---------- 4e. Pantalla completa ---------- */
+const btnPant = document.getElementById('pant');
+if (!(document.fullscreenEnabled || document.webkitFullscreenEnabled)) btnPant.style.display = 'none';   // p. ej. iPhone no permite pantalla completa
+btnPant.onclick = () => {
+  const el = document.documentElement;
+  if (document.fullscreenElement || document.webkitFullscreenElement) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+  else (el.requestFullscreen || el.webkitRequestFullscreen).call(el);
+};
+document.addEventListener('fullscreenchange', () => btnPant.classList.toggle('activa', !!document.fullscreenElement));
+
+/* ---------- 5. Línea de tiempo ----------
+   0–8 s  : los puntos de luz caen y forman el capullo cerrado; la superficie se solidifica justo detrás
+   6–14 s : el capullo se abre (φ pasa de FAC_CERRADO·φ a φ) */
+const DUR_FORMA = 8, T_ABRIR = 6, DUR_ABRIR = 8;
+const T_LLUVIA = 11.5, DUR_LLUVIA = 5;                      // la lluvia empieza a escampar un poco antes de que la rosa termine de abrirse
+let t0 = performance.now(), listo = false, tListo = 0;
+const texto = document.getElementById('texto');
+const haloEl = document.getElementById('halo');
+function reiniciar() {
+  t0 = performance.now(); matP.uniforms.uProg.value = 0; mat.uniforms.uProg.value = 0;
+  mat.uniforms.uBloom.value = 0; matP.uniforms.uBloom.value = 0; matP.uniforms.uA.value = 1;
+  listo = false; ciclo(); scrollTo(0, 0);
+  // vuelve a la vista por defecto (zoom, posición y giro), aunque la hayas movido o estés leyendo el pétalo
+  camara.position.set(0, 0.53, innerWidth < 700 ? 9.0 : 6.7); ctl.target.set(0, -0.55, 0);
+  modo = 'general'; vuelo = null; vistaBtn.classList.remove('ver'); tocando = false; reposo = performance.now(); ctl.update();
+  texto.classList.remove('ver'); elEc.classList.remove('ver'); lc.style.opacity = .9;
+}
+document.getElementById('repetir').onclick = reiniciar;
+const suavizar = x => x * x * (3 - 2 * x);
+
+function bucle() {
+  requestAnimationFrame(bucle);
+  const s = (performance.now() - t0) / 1000;
+  const p = Math.min(s / DUR_FORMA, 1), sp = suavizar(p);
+  const pb = Math.min(Math.max((s - T_ABRIR) / DUR_ABRIR, 0), 1), sb = suavizar(pb);
+  matP.uniforms.uProg.value = sp * 1.12;
+  mat.uniforms.uProg.value = Math.max(0, sp * 1.29 - 0.17);          // la superficie va un poco detrás de los puntos
+  matP.uniforms.uA.value = 1 - suavizar(Math.min(Math.max((p - 0.55) / 0.45, 0), 1));   // los puntos se apagan
+  mat.uniforms.uBloom.value = matP.uniforms.uBloom.value = sb;
+  lc.style.opacity = (0.9 - 0.45 * sp).toFixed(3);
+  // escampa: cada vez caen menos gotas (no se difumina); las que ya caían terminan su recorrido y vuelve la calma
+  const dens = 1 - suavizar(Math.min(Math.max((s - T_LLUVIA) / DUR_LLUVIA, 0), 1));
+  if (pb >= 1 && !listo) { listo = true; tListo = performance.now(); texto.classList.add('ver'); }
+  // gira sola desde el inicio; se detiene mientras la tocas y se reanuda 4 s después de soltarla
+  matM.uniforms.uT.value = performance.now() / 1000; matM.uniforms.uA.value = modo === 'general' ? sb : 0;
+  mat.uniforms.uT.value = performance.now() / 1000;
+  inten += ((performance.now() - ultimoMov < 2500 ? 1 : 0) - inten) * 0.06;
+  { const lx = px * 0.9, ly = py * 0.9, lz = 0.8, l = Math.hypot(lx, ly, lz); mat.uniforms.uPunt.value.set(lx / l, ly / l, lz / l, inten); }
+  pasoVuelo();
+  ctl.autoRotate = !QUIETA && !tocando && !vuelo && modo === 'general' && (performance.now() - reposo > 4000);
+  matD.uniforms.uT.value = performance.now() / 1000; matD.uniforms.uA.value = sb;
+  const sc = Math.min(Math.max(scrollY / innerHeight, 0), 1);          // 0 = la rosa, 1 = pantalla final
+  haloEl.style.opacity = (sb * 0.95 * (1 - sc * 0.8)).toFixed(3);
+  lienzoRosa.style.filter = sc > 0.01 ? 'blur(' + (sc * 5).toFixed(2) + 'px) brightness(' + (1 - sc * 0.6).toFixed(3) + ')' : '';
+  texto.classList.toggle('oculto', sc > 0.25); elEc.classList.toggle('oculto', sc > 0.25);
+  btnPant.classList.toggle('oculto', sc > 0.25);
+  bajarBtn.classList.toggle('ver', listo && sc < 0.08); subirBtn.classList.toggle('ver', sc > 0.6);
+  if (s < T_LLUVIA + DUR_LLUVIA + 5) pintarLluvia(dens);   // cuando ya paró y se secaron los rastros, deja de dibujarla (ahorra batería)
+  ctl.update();
+  renderer.render(escena, camara);
+}
+bucle();
+ciclo();
+if (musicaOn) fundirMusica(VOL_MUSICA, 5000);                // la música entra poco a poco
+document.documentElement.classList.remove('bloqueado');
+document.getElementById('candado').classList.add('abierto');
+</script>
+</body>
+</html>
