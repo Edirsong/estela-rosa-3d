@@ -101,17 +101,17 @@
   html.bloqueado, html.bloqueado body { overflow:hidden; }
   #candado { position:fixed; inset:0; z-index:100; background:#060c1e; display:flex; align-items:flex-start; justify-content:center; padding-top:clamp(70px, 22vh, 220px); transition:opacity 1.6s ease; }
   #candado.abierto { opacity:0; pointer-events:none; }
-  #candado { background:
-      radial-gradient(ellipse 70% 55% at 50% 22%, rgba(120,30,90,.34), transparent 70%),
-      radial-gradient(ellipse 80% 60% at 15% 90%, rgba(25,55,150,.42), transparent 70%),
-      radial-gradient(ellipse 60% 50% at 90% 70%, rgba(60,25,120,.30), transparent 70%),
-      linear-gradient(#050a1a, #0a1230); overflow:hidden; }
-  #candado::before { content:''; position:absolute; left:50%; top:30%; width:min(120vmin,900px); height:min(120vmin,900px); transform:translate(-50%,-50%);
-      background:radial-gradient(circle, rgba(225,40,90,.14), transparent 62%); animation:respira 7s ease-in-out infinite; pointer-events:none; }
+  #candado { background: radial-gradient(ellipse 80% 60% at 50% 20%, rgba(35,70,140,.20), transparent 70%), #060c1e; overflow:hidden; }
+  #candado::before { content:none; }
   #candadoForm { position:relative; z-index:2; }
-  .estrella { position:absolute; border-radius:50%; background:#f4ead2; opacity:.15; animation:titila var(--d) ease-in-out infinite var(--r); pointer-events:none; }
-  @keyframes titila { 50% { opacity:.95; transform:scale(1.5); } }
-  .fugaz { position:absolute; width:110px; height:1.5px; background:linear-gradient(90deg, rgba(244,234,210,0), rgba(244,234,210,.95)); transform-origin:100% 50%;
+  .constelacion { position:absolute; right:7vw; top:7vh; width:min(36vw,300px); height:auto; overflow:visible; pointer-events:none; }
+  .constelacion line { stroke:#9bb4e0; stroke-width:.07; opacity:0; animation:traza 3.5s ease forwards; }
+  @keyframes traza { to { opacity:.22; } }
+  .constelacion circle { fill:#dfe8fa; filter:drop-shadow(0 0 .25px #b8cdf0); opacity:.7; animation:titila var(--d) ease-in-out infinite var(--r); transform-box:fill-box; transform-origin:center; }
+  @media (max-width:700px) { .constelacion { right:50%; transform:translateX(50%); top:5vh; width:52vw; } }
+  .estrella { position:absolute; border-radius:50%; background:#dfe8fa; opacity:.14; box-shadow:0 0 2px rgba(190,210,250,.3); animation:titila var(--d) ease-in-out infinite var(--r); pointer-events:none; }
+  @keyframes titila { 50% { opacity:.6; transform:scale(1.2); } }
+  .fugaz { position:absolute; width:90px; height:1px; background:linear-gradient(90deg, rgba(220,235,255,0), rgba(220,235,255,.7)); transform-origin:100% 50%;
       transform:rotate(28deg); opacity:0; animation:fugaz 1.3s ease-out forwards; pointer-events:none; }
   @keyframes fugaz { 0% { opacity:0; translate:0 0; } 15% { opacity:1; } 100% { opacity:0; translate:300px 160px; } }
   #candadoForm .fila { transition:border-color .5s, box-shadow .5s; }
@@ -135,6 +135,11 @@
     #marco { background:radial-gradient(ellipse at 50% 50%, transparent 42%, rgba(3,6,16,.55) 100%); }
     #texto { bottom:15vh; }
   }
+  .cometa { position:absolute; left:0; bottom:22vh; width:48px; height:1px; background:linear-gradient(90deg, rgba(210,225,255,0), rgba(210,225,255,.7)); opacity:0;
+    animation:cometa 36s linear infinite 3s; pointer-events:none; }
+  .cometa::after { content:''; position:absolute; right:-1px; top:-1px; width:2.5px; height:2.5px; border-radius:50%; background:#e6efff; box-shadow:0 0 4px 1px rgba(190,215,255,.5); }
+  @keyframes cometa { 0% { transform:translate(-12vw, 5vh) rotate(-5deg); opacity:0; } 5% { opacity:1; } 72% { opacity:1; } 82% { transform:translate(112vw, -9vh) rotate(-5deg); opacity:0; } 100% { transform:translate(112vw, -9vh) rotate(-5deg); opacity:0; } }
+  #musica { z-index:101; }
 </style>
 </head>
 <body>
@@ -191,7 +196,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 /* Música de fondo: sonidos/musica.mp3 (si el archivo no existe, la página sigue sin música y el botón se oculta) */
 const VOL_MUSICA = 0.6;                                   // volumen (0–1): bájalo si la quieres más suave
 const musica = new Audio('sonidos/musica.mp3'); musica.loop = true; musica.preload = 'auto'; musica.volume = 0;
-let musicaOn = true, fadeId = 0;
+let musicaOn = true, musicaIniciada = false, fadeId = 0;
 function fundirMusica(objetivo, ms) {
   clearInterval(fadeId); const v0 = musica.volume, t0 = performance.now();
   fadeId = setInterval(() => {
@@ -200,16 +205,22 @@ function fundirMusica(objetivo, ms) {
     if (k >= 1) clearInterval(fadeId);
   }, 50);
 }
+function arrancarMusica() {                                // el primer toque o tecla en la pantalla de la clave permite el audio: entra suave
+  if (!musicaOn || musicaIniciada) return;
+  musica.volume = 0;
+  musica.play().then(() => { musicaIniciada = true; fundirMusica(VOL_MUSICA, 4000); }).catch(() => {});
+}
+['pointerdown', 'keydown'].forEach(ev => document.getElementById('candado').addEventListener(ev, arrancarMusica));
 const btnMus = document.getElementById('musica');
 musica.addEventListener('error', () => { btnMus.style.display = 'none'; });
 btnMus.onclick = () => {
   musicaOn = !musicaOn; btnMus.classList.toggle('silencio', !musicaOn);
   fundirMusica(musicaOn ? VOL_MUSICA : 0, 600);
-  if (musicaOn && musica.paused) musica.play().catch(() => {});
+  if (musicaOn && musica.paused) musica.play().then(() => { musicaIniciada = true; }).catch(() => {});
 };
 document.addEventListener('visibilitychange', () => {       // al cambiar de pestaña se pausa
   if (document.hidden) musica.pause();
-  else if (musicaOn && !document.documentElement.classList.contains('bloqueado')) musica.play().catch(() => {});
+  else if (musicaOn && musicaIniciada) musica.play().catch(() => {});
 });
 const normalizarClave = t => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
 // si algo falla mientras el candado sigue visible, el error se muestra debajo del campo (en vez de quedarse mudo)
@@ -217,8 +228,26 @@ addEventListener('error', e => { const m = document.getElementById('candadoMsg')
 addEventListener('unhandledrejection', e => { const m = document.getElementById('candadoMsg'), c = document.getElementById('candado'); if (m && c && !c.classList.contains('abierto')) m.textContent = 'error: ' + ((e.reason && e.reason.message) || e.reason); });
 function cielo() {
   const c = document.getElementById('candado');
+  // Acuario (estilizada: la «vasija» y el chorro de agua). Coordenadas aproximadas a partir de ascensión recta y declinación.
+  const NS = 'http://www.w3.org/2000/svg', st = {
+    e: [36.3, 9.5], b: [25.2, 5.6], a: [16.5, 0.3], g: [12.6, 1.4], z: [11, 0], h: [9.3, 0.1], p: [11.7, -1.4],
+    t: [13.8, 7.8], l: [5, 7.6], d: [4.4, 15.8], i: [16.5, 13.9] };
+  const lin = [['e','b'],['b','a'],['a','g'],['g','z'],['z','h'],['z','p'],['p','g'],['a','t'],['t','l'],['l','d'],['t','i']];
+  const sv = document.createElementNS(NS, 'svg'); sv.setAttribute('viewBox', '0 -4 40 22'); sv.setAttribute('class', 'constelacion');
+  lin.forEach(([u, v], k) => {
+    const l = document.createElementNS(NS, 'line');
+    l.setAttribute('x1', st[u][0]); l.setAttribute('y1', st[u][1]); l.setAttribute('x2', st[v][0]); l.setAttribute('y2', st[v][1]);
+    l.style.animationDelay = (1 + k * 0.35).toFixed(2) + 's'; sv.appendChild(l);
+  });
+  Object.keys(st).forEach((k, n) => {
+    const o = document.createElementNS(NS, 'circle');
+    o.setAttribute('cx', st[k][0]); o.setAttribute('cy', st[k][1]); o.setAttribute('r', 'abgzhp'.includes(k) ? 0.3 : 0.22);
+    o.style.setProperty('--d', (2.5 + (n % 4)) + 's'); o.style.setProperty('--r', '-' + (n * 0.7).toFixed(1) + 's'); sv.appendChild(o);
+  });
+  c.appendChild(sv);
+  const co = document.createElement('i'); co.className = 'cometa'; c.appendChild(co);
   for (let i = 0; i < 90; i++) {
-    const e = document.createElement('i'), t = Math.random() < 0.15 ? 2.4 : 1.4 + Math.random();
+    const e = document.createElement('i'), t = Math.random() < 0.08 ? 2 : 0.9 + Math.random() * 0.7;
     e.className = 'estrella';
     e.style.cssText = 'left:' + (Math.random() * 100).toFixed(1) + '%;top:' + (Math.random() * 100).toFixed(1) + '%;width:' + t.toFixed(1) + 'px;height:' + t.toFixed(1) + 'px;--d:' + (2.5 + Math.random() * 4).toFixed(1) + 's;--r:-' + (Math.random() * 6).toFixed(1) + 's';
     c.appendChild(e);
@@ -248,7 +277,7 @@ async function abrirCandado() {
   inp.focus();
   for (;;) {
     // el toque en «Entrar» autoriza el audio: la música empieza en silencio y entra con fundido cuando se abre la rosa
-    const clave = await new Promise(res => { form.onsubmit = ev => { ev.preventDefault(); musica.volume = 0; musica.play().catch(() => {}); res(inp.value); }; });
+    const clave = await new Promise(res => { form.onsubmit = ev => { ev.preventDefault(); arrancarMusica(); res(inp.value); }; });
     msg.textContent = 'comprobando…'; form.classList.add('trabajando');
     await dormirC(30);
     try {
@@ -258,7 +287,7 @@ async function abrirCandado() {
       msg.textContent = 'abriendo…'; inp.value = '';
       return JSON.parse(new TextDecoder().decode(plano));
     } catch (e) {
-      form.classList.remove('trabajando'); inp.value = ''; msg.textContent = 'clave incorrecta'; musica.pause();
+      form.classList.remove('trabajando'); inp.value = ''; msg.textContent = 'clave incorrecta';
       form.classList.add('sacudir'); await dormirC(450); form.classList.remove('sacudir'); inp.focus();
       await dormirC(500);                                   // frena los intentos rápidos
     }
