@@ -704,6 +704,27 @@ lienzoRosa.addEventListener('pointerup', e => {
   if (v.z < 1 && Math.hypot(e.clientX - sx, e.clientY - sy) < 44) irALeer();
 });
 
+/* ---------- 4b'. Doble toque (o doble clic) sobre cualquier parte de la rosa: la cámara vuela y se acerca a ese punto ---------- */
+const rayo = new THREE.Raycaster(), ptrR = new THREE.Vector2();
+let ultimoToque = { t: 0, x: 0, y: 0 };
+function enfocar(punto) {
+  if (modo === 'general') { posGeneral.copy(camara.position); objGeneral.copy(ctl.target); }
+  modo = 'lectura'; vistaBtn.classList.add('ver');
+  const dir = camara.position.clone().sub(punto).normalize();
+  volarA(punto.clone().addScaledVector(dir, 1.5), punto.clone(), 1300);
+}
+lienzoRosa.addEventListener('pointerup', e => {
+  if (!pulso || performance.now() - pulso.t > 400 || Math.hypot(e.clientX - pulso.x, e.clientY - pulso.y) > 8) return;   // solo toques breves, no arrastres
+  const ahora = performance.now();
+  if (ahora - ultimoToque.t < 330 && Math.hypot(e.clientX - ultimoToque.x, e.clientY - ultimoToque.y) < 30) {
+    ultimoToque.t = 0;
+    ptrR.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+    rayo.setFromCamera(ptrR, camara);
+    const golpe = rayo.intersectObject(rosa, false)[0];
+    if (golpe) enfocar(golpe.point);
+  } else ultimoToque = { t: ahora, x: e.clientX, y: e.clientY };
+});
+
 /* ---------- 4c. Luz que sigue al puntero (se enciende al moverlo y se apaga 2,5 s después) ---------- */
 let px = 0, py = 0.3, inten = 0, ultimoMov = -9999;
 addEventListener('pointermove', e => { px = e.clientX / innerWidth * 2 - 1; py = -(e.clientY / innerHeight * 2 - 1); ultimoMov = performance.now(); });
