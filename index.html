@@ -145,7 +145,7 @@
 <body>
 <div id="candado">
   <form id="candadoForm" autocomplete="off">
-    <label for="clave">&gt; Tu signo</label>
+    <label for="clave">&gt; Tu signo del zodíaco</label>
     <div class="fila">
       <input id="clave" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Clave">
       <button type="submit" aria-label="Entrar"><i></i></button>
@@ -228,7 +228,7 @@ addEventListener('error', e => { const m = document.getElementById('candadoMsg')
 addEventListener('unhandledrejection', e => { const m = document.getElementById('candadoMsg'), c = document.getElementById('candado'); if (m && c && !c.classList.contains('abierto')) m.textContent = 'error: ' + ((e.reason && e.reason.message) || e.reason); });
 function cielo() {
   const c = document.getElementById('candado');
-  // Acuario (estilizada: la «vasija» y el chorro de agua). Coordenadas aproximadas a partir de ascensión recta y declinación.
+  // Constelación estilizada. Coordenadas aproximadas a partir de ascensión recta y declinación.
   const NS = 'http://www.w3.org/2000/svg', st = {
     e: [36.3, 9.5], b: [25.2, 5.6], a: [16.5, 0.3], g: [12.6, 1.4], z: [11, 0], h: [9.3, 0.1], p: [11.7, -1.4],
     t: [13.8, 7.8], l: [5, 7.6], d: [4.4, 15.8], i: [16.5, 13.9] };
