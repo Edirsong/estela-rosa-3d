@@ -72,13 +72,6 @@
   #notaTxt.revelada .par { opacity:1; filter:none; transform:none; }
   #nota.escribiendo::after { content:''; display:inline-block; width:.55em; height:1.05em; margin-left:3px; vertical-align:text-bottom;
     background:rgba(217,182,108,.75); animation:parpadeo 1s steps(2,start) infinite; }
-  button#hoy { margin-top:26px; pointer-events:auto; background:transparent; color:var(--oro); cursor:pointer;
-    border:1px solid rgba(217,182,108,.5); border-radius:999px; padding:12px 22px; font:13px ui-monospace, Consolas, monospace; letter-spacing:.12em;
-    opacity:0; transition:opacity 1.2s ease, border-color .3s, background .3s; visibility:hidden; }
-  button#hoy.ver { opacity:1; visibility:visible; }
-  button#hoy:hover { border-color:var(--oro); background:rgba(217,182,108,.08); }
-  #hoyBox { width:min(640px,100%); margin-top:26px; opacity:0; transition:opacity 1.2s ease; }
-  #hoyBox.ver { opacity:1; }
   #hoyFecha { font:12px ui-monospace, Consolas, monospace; color:rgba(217,182,108,.8); letter-spacing:.08em; }
   #hoyFecha::before { content:'> '; }
   #hoyTxt { margin-top:10px; font:italic 19px/1.6 Georgia, serif; color:var(--crema); min-height:3.2em; }
@@ -107,7 +100,11 @@
   .constelacion { position:absolute; right:7vw; top:7vh; width:min(36vw,300px); height:auto; overflow:visible; pointer-events:none; }
   .constelacion line { stroke:#9bb4e0; stroke-width:.07; opacity:0; animation:traza 3.5s ease forwards; }
   @keyframes traza { to { opacity:.22; } }
-  .constelacion circle { fill:#dfe8fa; filter:drop-shadow(0 0 .25px #b8cdf0); opacity:.7; animation:titila var(--d) ease-in-out infinite var(--r); transform-box:fill-box; transform-origin:center; }
+  @keyframes titilaC { 0%, 100% { opacity:.35; } 50% { opacity:1; } }
+  .constelacion line { transition:stroke .6s; }
+  .constelacion.vivo circle { filter:drop-shadow(0 0 1.1px #d6e4ff); }
+  .constelacion.vivo line { stroke:#d6e4ff; }
+  .constelacion circle { fill:#dfe8fa; filter:drop-shadow(0 0 .25px #b8cdf0); opacity:.7; animation:titilaC var(--d) ease-in-out infinite var(--r); transition:filter .6s; }
   @media (max-width:700px) { .constelacion { right:50%; transform:translateX(50%); top:5vh; width:52vw; } }
   .estrella { position:absolute; border-radius:50%; background:#dfe8fa; opacity:.14; box-shadow:0 0 2px rgba(190,210,250,.3); animation:titila var(--d) ease-in-out infinite var(--r); pointer-events:none; }
   @keyframes titila { 50% { opacity:.6; transform:scale(1.2); } }
@@ -140,6 +137,43 @@
   .cometa::after { content:''; position:absolute; right:-1px; top:-1px; width:2.5px; height:2.5px; border-radius:50%; background:#e6efff; box-shadow:0 0 4px 1px rgba(190,215,255,.5); }
   @keyframes cometa { 0% { transform:translate(-12vw, 5vh) rotate(-5deg); opacity:0; } 5% { opacity:1; } 72% { opacity:1; } 82% { transform:translate(112vw, -9vh) rotate(-5deg); opacity:0; } 100% { transform:translate(112vw, -9vh) rotate(-5deg); opacity:0; } }
   #musica { z-index:101; }
+  /* ---------- «Mensaje de hoy»: botón redondo + tarjeta flotante sobre la rosa ---------- */
+  button#hoy.rb { right:16px; bottom:16px; opacity:0; pointer-events:none; }
+  button#hoy.rb.ver { opacity:1; pointer-events:auto; animation:latido 2.8s ease-in-out infinite; }
+  button#hoy.rb.oculto { opacity:0; pointer-events:none; animation:none; }
+  @keyframes latido { 0% { box-shadow:0 0 0 0 rgba(217,182,108,.45); } 70%,100% { box-shadow:0 0 0 14px rgba(217,182,108,0); } }
+  #hoyBox { position:fixed; left:50%; bottom:14vh; z-index:4; width:min(88vw,460px); padding:22px 24px 20px; border-radius:18px;
+    background:rgba(6,12,30,.86); border:1px solid rgba(217,182,108,.35); opacity:0; pointer-events:none;
+    transform:translate(-50%, 14px); transition:opacity .9s ease, transform .9s ease; }
+  #hoyBox.ver { opacity:1; pointer-events:auto; transform:translate(-50%, 0); }
+  #cerrarHoy { position:absolute; right:10px; top:4px; background:none; border:0; color:var(--crema); font:26px/1 Georgia, serif; cursor:pointer; opacity:.65; padding:4px 8px; }
+  #cerrarHoy:hover { opacity:1; }
+  /* pista para girar la rosa: aparece unos segundos bajo el nombre y se va */
+  #texto .pista { position:absolute; left:0; right:0; top:100%; margin-top:12px; font:italic 13px Georgia, serif; letter-spacing:.04em; text-transform:none;
+    color:rgba(244,234,210,.7); opacity:0; transition:opacity 1.8s ease; padding:0 24px; }
+  #texto.con-pista .pista { opacity:1; }
+  /* huellas de gato bajo la firma */
+  #patitas { position:relative; width:min(640px,100%); height:100px; margin-top:6px; }
+  .pata { position:absolute; width:22px; height:22px; fill:rgba(217,182,108,.8); opacity:0; transform:rotate(var(--r)) scale(.5);
+    transition:opacity .9s ease var(--d), transform .9s ease var(--d); }
+  #patitas.ver .pata { opacity:.8; transform:rotate(var(--r)) scale(1); }
+  /* ---------- cielo: capas, giro lento, estrellas al tocar y viaje de luz ---------- */
+  .cieloPar, .capaCon { position:absolute; inset:0; pointer-events:none; }
+  .cieloGira { position:absolute; inset:0; pointer-events:none; }
+  .estrella.fija { animation:none; opacity:.3; }
+  .estrella.nueva { width:3px; height:3px; margin:-1.5px 0 0 -1.5px; opacity:.9; box-shadow:0 0 8px 2px rgba(200,220,255,.75); animation:nace .8s ease-out, titila var(--d) ease-in-out .8s infinite; }
+  @keyframes nace { from { transform:scale(0); opacity:0; } 60% { transform:scale(2.4); opacity:1; } to { transform:scale(1); } }
+  .estrella.nueva.adios { animation:none; opacity:0; transition:opacity 1.5s ease; }
+  #candado.viaje .estrella { opacity:.4; animation:apaga 1.5s ease-in-out var(--ad, 0s) forwards; }
+  @keyframes apaga { 0% { opacity:.4; transform:scale(1); } 28% { opacity:1; transform:scale(1.7); } 100% { opacity:0; transform:scale(.6); } }
+  #candado.viaje .fugaz, #candado.viaje .cometa { display:none; }
+  #candado.viaje #candadoForm { opacity:0; transform:scale(.96); transition:opacity .6s ease, transform .6s ease; }
+  #candado.viaje .constelacion circle { animation:none; opacity:1; filter:drop-shadow(0 0 2px #fff); }
+  #candado.viaje .constelacion line { animation:none; opacity:.8; stroke:#fff; }
+  #candado.viaje .capaCon { animation:desvanece 1.7s ease-in forwards; }
+  @keyframes desvanece { 0%, 60% { opacity:1; } 100% { opacity:0; } }
+  #candado.viaje::after { content:''; position:absolute; inset:0; background:radial-gradient(circle at 50% 42%, rgba(205,225,255,.5), transparent 55%); opacity:0; animation:destello 1.7s ease-out forwards; pointer-events:none; }
+  @keyframes destello { 0% { opacity:0; } 60% { opacity:.55; } 100% { opacity:0; } }
 </style>
 </head>
 <body>
@@ -169,18 +203,27 @@
   <svg class="ico-sal" viewBox="0 0 24 24"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>
 </button>
 
-<div id="texto">Estela<small>un rastro de luz</small></div>
+<div id="texto">Estela<small>un rastro de luz</small><span class="pista">Gírame… hay cosas que solo se descubren por el otro lado.</span></div>
 <button id="bajar" aria-label="Bajar"><i></i></button>
+<button id="hoy" class="rb" aria-label="Mensaje de hoy"><svg viewBox="0 0 24 24"><path d="M12 2l2.2 7.8L22 12l-7.8 2.2L12 22l-2.2-7.8L2 12l7.8-2.2z"/></svg></button>
+<div id="hoyBox"><button id="cerrarHoy" aria-label="Cerrar">×</button><div id="hoyFecha"></div><div id="hoyTxt"></div></div>
 <main id="pagina">
   <section id="portada"></section>
   <section id="final">
     <button id="subir" aria-label="Volver a la rosa"><i></i></button>
     <div id="nota"><span id="notaTxt"></span></div>
-    <button id="hoy">Mensaje de hoy</button>
-    <div id="hoyBox"><div id="hoyFecha"></div><div id="hoyTxt"></div></div>
+    <div id="patitas" aria-hidden="true"></div>
   </section>
 </main>
 
+<script>
+  /* iPhone anteriores a iOS 16.4 y navegadores muy viejos no entienden «importmap»: la página no arrancaría. Se avisa en la pantalla de la clave. */
+  try {
+    if (!(window.HTMLScriptElement && HTMLScriptElement.supports && HTMLScriptElement.supports('importmap'))) {
+      document.addEventListener('DOMContentLoaded', function () { var m = document.getElementById('candadoMsg'); if (m) m.textContent = 'tu navegador es muy antiguo: ábrela en Chrome o actualiza el teléfono'; });
+    }
+  } catch (e) {}
+</script>
 <script type="importmap">
 { "imports": {
   "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
@@ -194,33 +237,51 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 /* ---------- 0. Candado: los textos privados están cifrados en secreto.json; la clave los descifra en tu navegador ---------- */
 /* Música de fondo: sonidos/musica.mp3 (si el archivo no existe, la página sigue sin música y el botón se oculta) */
-const VOL_MUSICA = 0.6;                                   // volumen (0–1): bájalo si la quieres más suave
-const musica = new Audio('sonidos/musica.mp3'); musica.loop = true; musica.preload = 'auto'; musica.volume = 0;
-let musicaOn = true, musicaIniciada = false, fadeId = 0;
+const VOL_INICIO = 0.8, VOL_FINAL = 1.0, SUBIDA_MS = 8000;   // arranca al 80 % y sube despacio hasta el 100 %
+const musica = new Audio('sonidos/musica.mp3'); musica.loop = true; musica.preload = 'auto'; musica.volume = 1;
+let musicaOn = true, musicaIniciada = false, arrancando = false, fadeId = 0, audioCtx = null, ganancia = null;
+function prepararAudio() {                                  // el volumen pasa por Web Audio: así también funciona en iPhone (allí .volume se ignora)
+  if (audioCtx) return;
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const fuente = audioCtx.createMediaElementSource(musica);
+    ganancia = audioCtx.createGain(); ganancia.gain.value = 0;
+    fuente.connect(ganancia); ganancia.connect(audioCtx.destination);
+  } catch (e) { audioCtx = null; ganancia = null; }
+}
 function fundirMusica(objetivo, ms) {
-  clearInterval(fadeId); const v0 = musica.volume, t0 = performance.now();
+  if (ganancia) {
+    const t = audioCtx.currentTime;
+    ganancia.gain.cancelScheduledValues(t); ganancia.gain.setValueAtTime(ganancia.gain.value, t);
+    ganancia.gain.linearRampToValueAtTime(objetivo, t + ms / 1000); return;
+  }
+  clearInterval(fadeId); const v0 = musica.volume, t0 = performance.now();      // respaldo si no hay Web Audio
   fadeId = setInterval(() => {
     const k = Math.min((performance.now() - t0) / ms, 1);
     musica.volume = Math.max(0, Math.min(1, v0 + (objetivo - v0) * k));
     if (k >= 1) clearInterval(fadeId);
   }, 50);
 }
-function arrancarMusica() {                                // el primer toque o tecla en la pantalla de la clave permite el audio: entra suave
-  if (!musicaOn || musicaIniciada) return;
-  musica.volume = 0;
-  musica.play().then(() => { musicaIniciada = true; fundirMusica(VOL_MUSICA, 4000); }).catch(() => {});
+function subirMusica() { fundirMusica(VOL_INICIO, 1200); setTimeout(() => { if (musicaOn) fundirMusica(VOL_FINAL, SUBIDA_MS); }, 1300); }
+function arrancarMusica() {                                // el primer toque o tecla en la pantalla de la clave permite el audio
+  if (!musicaOn || musicaIniciada || arrancando) return;
+  arrancando = true; prepararAudio();
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  if (!ganancia) musica.volume = 0;
+  musica.play().then(() => { musicaIniciada = true; arrancando = false; subirMusica(); }).catch(() => { arrancando = false; });
 }
-['pointerdown', 'keydown'].forEach(ev => document.getElementById('candado').addEventListener(ev, arrancarMusica));
+['pointerdown', 'touchend', 'click', 'keydown'].forEach(ev => document.getElementById('candado').addEventListener(ev, arrancarMusica));   // touchend/click: iPhone solo acepta esos gestos
 const btnMus = document.getElementById('musica');
 musica.addEventListener('error', () => { btnMus.style.display = 'none'; });
 btnMus.onclick = () => {
   musicaOn = !musicaOn; btnMus.classList.toggle('silencio', !musicaOn);
-  fundirMusica(musicaOn ? VOL_MUSICA : 0, 600);
+  fundirMusica(musicaOn ? VOL_FINAL : 0, 600);
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
   if (musicaOn && musica.paused) musica.play().then(() => { musicaIniciada = true; }).catch(() => {});
 };
 document.addEventListener('visibilitychange', () => {       // al cambiar de pestaña se pausa
   if (document.hidden) musica.pause();
-  else if (musicaOn && musicaIniciada) musica.play().catch(() => {});
+  else if (musicaOn && musicaIniciada) { if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); musica.play().catch(() => {}); }
 });
 const normalizarClave = t => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
 // si algo falla mientras el candado sigue visible, el error se muestra debajo del campo (en vez de quedarse mudo)
@@ -244,14 +305,29 @@ function cielo() {
     o.setAttribute('cx', st[k][0]); o.setAttribute('cy', st[k][1]); o.setAttribute('r', 'abgzhp'.includes(k) ? 0.3 : 0.22);
     o.style.setProperty('--d', (2.5 + (n % 4)) + 's'); o.style.setProperty('--r', '-' + (n * 0.7).toFixed(1) + 's'); sv.appendChild(o);
   });
-  c.appendChild(sv);
+  const capaCon = document.createElement('div'); capaCon.className = 'capaCon'; capaCon.appendChild(sv); c.appendChild(capaCon);
+  document.getElementById('clave').addEventListener('input', () => {              // al escribir, las estrellas de la constelación brillan un instante
+    sv.classList.add('vivo'); clearTimeout(sv._t); sv._t = setTimeout(() => sv.classList.remove('vivo'), 800);
+  });
   const co = document.createElement('i'); co.className = 'cometa'; c.appendChild(co);
-  for (let i = 0; i < 90; i++) {
+  // cielo quieto: estrellas fijas (solo 1 de cada 3 titila) y, al tocar, nace una estrella
+  const gira = document.createElement('div'); gira.className = 'cieloGira';
+  c.insertBefore(gira, c.firstChild);
+  for (let i = 0; i < 110; i++) {
     const e = document.createElement('i'), t = Math.random() < 0.08 ? 2 : 0.9 + Math.random() * 0.7;
-    e.className = 'estrella';
+    e.className = 'estrella' + (i % 3 ? ' fija' : '');
     e.style.cssText = 'left:' + (Math.random() * 100).toFixed(1) + '%;top:' + (Math.random() * 100).toFixed(1) + '%;width:' + t.toFixed(1) + 'px;height:' + t.toFixed(1) + 'px;--d:' + (2.5 + Math.random() * 4).toFixed(1) + 's;--r:-' + (Math.random() * 6).toFixed(1) + 's';
-    c.appendChild(e);
+    gira.appendChild(e);
   }
+  const nuevas = [];
+  c.addEventListener('pointerdown', e => {                     // al tocar el cielo nace una estrella que titila un rato y se apaga
+    if (e.target.closest('#candadoForm, button')) return;
+    const n = document.createElement('i'); n.className = 'estrella nueva';
+    n.style.cssText = 'left:' + e.clientX + 'px;top:' + e.clientY + 'px;--d:' + (2 + Math.random() * 2).toFixed(1) + 's;--r:0s';
+    c.appendChild(n); nuevas.push(n);
+    setTimeout(() => n.classList.add('adios'), 14000); setTimeout(() => n.remove(), 15600);
+    if (nuevas.length > 30) nuevas.shift().remove();
+  });
   const lanzar = () => {
     if (c.classList.contains('abierto')) return;
     const f = document.createElement('i'); f.className = 'fugaz';
@@ -262,6 +338,11 @@ function cielo() {
   setTimeout(lanzar, 2500);
 }
 cielo();
+function viajeLuz() {                                          // sin movimiento: cada estrella se enciende un instante y se apaga, en momentos distintos
+  const c = document.getElementById('candado');
+  c.querySelectorAll('.estrella').forEach(e => e.style.setProperty('--ad', (Math.random() * 0.9).toFixed(2) + 's'));
+  c.classList.add('viaje');
+}
 async function abrirCandado() {
   const form = document.getElementById('candadoForm'), inp = document.getElementById('clave'), msg = document.getElementById('candadoMsg');
   const dormirC = ms => new Promise(r => setTimeout(r, ms));
@@ -284,8 +365,9 @@ async function abrirCandado() {
       const mat = await crypto.subtle.importKey('raw', new TextEncoder().encode(normalizarClave(clave)), 'PBKDF2', false, ['deriveKey']);
       const llave = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: b64(sobre.salt), iterations: sobre.iter, hash: 'SHA-256' }, mat, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
       const plano = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64(sobre.iv) }, llave, b64(sobre.ct));
-      msg.textContent = 'abriendo…'; inp.value = '';
-      return JSON.parse(new TextDecoder().decode(plano));
+      const datos = JSON.parse(new TextDecoder().decode(plano));
+      msg.textContent = ''; inp.value = ''; viajeLuz(); await dormirC(1000);   // deja ver el inicio del viaje antes de armar la rosa
+      return datos;
     } catch (e) {
       form.classList.remove('trabajando'); inp.value = ''; msg.textContent = 'clave incorrecta';
       form.classList.add('sacudir'); await dormirC(450); form.classList.remove('sacudir'); inp.focus();
@@ -295,7 +377,8 @@ async function abrirCandado() {
 }
 const PRIVADO = await abrirCandado();
 
-const QUIETA = location.search.includes('quieta');   // ?quieta → sin giro automático (para revisar de frente)
+const QUIETA = location.search.includes('quieta');
+const MOVIL = matchMedia('(pointer:coarse)').matches || innerWidth < 700;      // teléfono/tablet: se reduce la carga gráfica   // ?quieta → sin giro automático (para revisar de frente)
 
 /* ---------- 1. Lluvia de código (fondo 2D) ---------- */
 const lc = document.getElementById('lluvia');
@@ -353,7 +436,7 @@ function puntoRosa(th, r, fac) {
   const Z  = xx * (r * Math.cos(phi) - yy * Math.sin(phi));
   return [R1 * Math.sin(th) * ESC_XY, Z * ESC_Z, R1 * Math.cos(th) * ESC_XY];
 }
-malla(2600, 60, (u, v) => {
+malla(MOVIL ? 1800 : 2600, MOVIL ? 50 : 60, (u, v) => {
   const th = u * 20 * Math.PI, r = v;
   col.copy(cInt).lerp(cMed, Math.min(1, r * 1.5));
   col.lerp(cExt, Math.pow(r, 2) * 0.7 * (1 - 0.4 * u));
@@ -671,14 +754,15 @@ const matD = new THREE.ShaderMaterial({
 escena.add(new THREE.Points(geoD, matD));
 
 
-function ajustar() {
+function ajustar(conLluvia = true) {
   renderer.setSize(innerWidth, innerHeight, false);
   camara.aspect = innerWidth / innerHeight;
   if (!ajustar.hecho) { camara.position.set(0, 0.4, innerWidth < 700 ? 8.4 : 6.25); ajustar.hecho = true; }   // distancia inicial según pantalla
   camara.updateProjectionMatrix();
-  ajustarLluvia();
+  if (conLluvia) ajustarLluvia();
 }
-addEventListener('resize', ajustar); ajustar();
+let anchoPrev = innerWidth;
+addEventListener('resize', () => { ajustar(innerWidth !== anchoPrev); anchoPrev = innerWidth; }); ajustar();   // solo cambió la altura (barra del navegador): no se reinicia la lluvia
 
 /* ---------- 4. Ecuaciones sutiles: una a la vez, aparecen y se desvanecen ---------- */
 const ECS = [
@@ -802,6 +886,15 @@ const bajarBtn = document.getElementById('bajar'), subirBtn = document.getElemen
 bajarBtn.onclick = () => scrollTo({ top: innerHeight, behavior: 'smooth' });
 subirBtn.onclick = () => scrollTo({ top: 0, behavior: 'smooth' });
 
+/* huellas de gato (dibujo propio): una almohadilla y cuatro deditos; caminan en zigzag de izquierda a derecha */
+(function crearPatitas() {
+  const pasos = [[2, 52, 84], [12, 22, 96], [24, 56, 86], [35, 26, 98], [47, 58, 88], [59, 28, 100], [72, 60, 90]];   // [x %, y px, giro °]
+  const huella = '<path d="M16 15c-4 0-8 4-8 8 0 3 2 4.5 4 4.5 1.6 0 2.6-.8 4-.8s2.4.8 4 .8c2 0 4-1.5 4-4.5 0-4-4-8-8-8z"/>' +
+    '<ellipse cx="6.5" cy="12" rx="2.6" ry="3.4" transform="rotate(-20 6.5 12)"/><ellipse cx="12.5" cy="7" rx="2.7" ry="3.6" transform="rotate(-8 12.5 7)"/>' +
+    '<ellipse cx="19.5" cy="7" rx="2.7" ry="3.6" transform="rotate(8 19.5 7)"/><ellipse cx="25.5" cy="12" rx="2.6" ry="3.4" transform="rotate(20 25.5 12)"/>';
+  document.getElementById('patitas').innerHTML = pasos.map((q, i) =>
+    '<svg class="pata" viewBox="0 0 32 32" style="left:' + q[0] + '%;top:' + q[1] + 'px;--r:' + q[2] + 'deg;--d:' + (i * 0.55).toFixed(2) + 's">' + huella + '</svg>').join('');
+})();
 function revelarNota() {          // la carta aparece párrafo por párrafo: sale del desenfoque y sube suavemente (sin sonido)
   elNotaTxt.textContent = '';
   let t = 0.2;
@@ -812,27 +905,42 @@ function revelarNota() {          // la carta aparece párrafo por párrafo: sal
     elNotaTxt.appendChild(d);
   });
   requestAnimationFrame(() => requestAnimationFrame(() => elNotaTxt.classList.add('revelada')));
-  setTimeout(() => btnHoy.classList.add('ver'), (t + 1.2) * 1000);
+  setTimeout(() => document.getElementById('patitas').classList.add('ver'), (t + 0.6) * 1000);   // al terminar la carta, las huellas empiezan a caminar
 }
 let notaIniciada = false;
 new IntersectionObserver(es => {
   if (es[0].isIntersecting && !notaIniciada) { notaIniciada = true; revelarNota(); }
 }, { threshold: 0.55 }).observe(document.getElementById('final'));
 
-btnHoy.onclick = async () => {
-  btnHoy.classList.remove('ver');
+const cerrarHoy = document.getElementById('cerrarHoy');
+btnHoy.onclick = () => {
+  if (hoyBox.classList.contains('ver')) { hoyBox.classList.remove('ver'); return; }
   const hoy = new Date();
   const diaDelAno = Math.floor((hoy - new Date(hoy.getFullYear(), 0, 0)) / 86400000);
   hoyFecha.textContent = 'Hoy, ' + hoy.toLocaleDateString('es-PE', { day: 'numeric', month: 'long' });
-  hoyBox.classList.add('ver');
   const frase = MENSAJES[diaDelAno % MENSAJES.length];
   hoyTxt.classList.remove('revelado'); hoyTxt.textContent = '';
   frase.split(' ').forEach((pal, i) => {                  // cada palabra aparece con un pequeño retraso: sale del desenfoque y sube suavemente
     const sp = document.createElement('span'); sp.className = 'pal'; sp.textContent = pal;
     sp.style.transitionDelay = (0.35 + i * 0.13).toFixed(2) + 's'; hoyTxt.appendChild(sp);
   });
+  hoyBox.classList.add('ver');
   requestAnimationFrame(() => requestAnimationFrame(() => hoyTxt.classList.add('revelado')));
 };
+cerrarHoy.onclick = () => hoyBox.classList.remove('ver');
+document.addEventListener('pointerdown', e => {            // tocar fuera de la tarjeta la cierra
+  if (hoyBox.classList.contains('ver') && !hoyBox.contains(e.target) && !btnHoy.contains(e.target)) hoyBox.classList.remove('ver');
+});
+let tHoy = [], tPista = [];
+function mostrarAyudas() {                                  // al terminar de abrirse la rosa: aparece el botón, un cartelito unos segundos y la pista de girar
+  ocultarAyudas();
+  btnHoy.classList.add('ver');
+  tPista = [setTimeout(() => texto.classList.add('con-pista'), 3200), setTimeout(() => texto.classList.remove('con-pista'), 11500)];
+}
+function ocultarAyudas() {
+  [...tHoy, ...tPista].forEach(clearTimeout); tHoy = []; tPista = [];
+  btnHoy.classList.remove('ver'); hoyBox.classList.remove('ver'); texto.classList.remove('con-pista');
+}
 
 /* ---------- 4e. Pantalla completa ---------- */
 const btnPant = document.getElementById('pant');
@@ -855,7 +963,7 @@ const haloEl = document.getElementById('halo');
 function reiniciar() {
   t0 = performance.now(); matP.uniforms.uProg.value = 0; mat.uniforms.uProg.value = 0;
   mat.uniforms.uBloom.value = 0; matP.uniforms.uBloom.value = 0; matP.uniforms.uA.value = 1;
-  listo = false; ciclo(); scrollTo(0, 0);
+  listo = false; ciclo(); scrollTo(0, 0); ocultarAyudas();
   // vuelve a la vista por defecto (zoom, posición y giro), aunque la hayas movido o estés leyendo el pétalo
   camara.position.set(0, 0.4, innerWidth < 700 ? 8.4 : 6.25); ctl.target.set(0, -0.7, 0);
   modo = 'general'; vuelo = null; vistaBtn.classList.remove('ver'); tocando = false; reposo = performance.now(); ctl.update();
@@ -876,7 +984,7 @@ function bucle() {
   lc.style.opacity = (0.9 - 0.45 * sp).toFixed(3);
   // escampa: cada vez caen menos gotas (no se difumina); las que ya caían terminan su recorrido y vuelve la calma
   const dens = 1 - suavizar(Math.min(Math.max((s - T_LLUVIA) / DUR_LLUVIA, 0), 1));
-  if (pb >= 1 && !listo) { listo = true; tListo = performance.now(); texto.classList.add('ver'); }
+  if (pb >= 1 && !listo) { listo = true; tListo = performance.now(); texto.classList.add('ver'); mostrarAyudas(); }
   // gira sola desde el inicio; se detiene mientras la tocas y se reanuda 4 s después de soltarla
   matM.uniforms.uT.value = performance.now() / 1000; matM.uniforms.uA.value = modo === 'general' ? sb : 0;
   mat.uniforms.uT.value = performance.now() / 1000;
@@ -888,9 +996,9 @@ function bucle() {
   const sc = Math.min(Math.max(scrollY / innerHeight, 0), 1);          // 0 = la rosa, 1 = pantalla final
   ctl.enabled = sc < 0.3; lienzoRosa.style.pointerEvents = sc < 0.3 ? '' : 'none';   // ya en la pantalla final, el dedo no mueve la rosa
   haloEl.style.opacity = (sb * 0.95 * (1 - sc * 0.8)).toFixed(3);
-  lienzoRosa.style.filter = sc > 0.01 ? 'blur(' + (sc * 5).toFixed(2) + 'px) brightness(' + (1 - sc * 0.6).toFixed(3) + ')' : '';
+  lienzoRosa.style.filter = sc > 0.01 ? (MOVIL ? '' : 'blur(' + (sc * 5).toFixed(2) + 'px) ') + 'brightness(' + (1 - sc * 0.6).toFixed(3) + ')' : '';   // el desenfoque pesa mucho en celulares
   texto.classList.toggle('oculto', sc > 0.25); elEc.classList.toggle('oculto', sc > 0.25);
-  btnPant.classList.toggle('oculto', sc > 0.25);
+  btnPant.classList.toggle('oculto', sc > 0.25); btnHoy.classList.toggle('oculto', sc > 0.25); if (sc > 0.25) hoyBox.classList.remove('ver');
   bajarBtn.classList.toggle('ver', listo && sc < 0.08); subirBtn.classList.toggle('ver', sc > 0.6);
   if (s < T_LLUVIA + DUR_LLUVIA + 5) pintarLluvia(dens);   // cuando ya paró y se secaron los rastros, deja de dibujarla (ahorra batería)
   ctl.update();
@@ -898,7 +1006,6 @@ function bucle() {
 }
 bucle();
 ciclo();
-if (musicaOn) fundirMusica(VOL_MUSICA, 5000);                // la música entra poco a poco
 document.documentElement.classList.remove('bloqueado');
 document.getElementById('candado').classList.add('abierto');
 </script>
