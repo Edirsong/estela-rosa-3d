@@ -174,6 +174,7 @@
   @keyframes desvanece { 0%, 60% { opacity:1; } 100% { opacity:0; } }
   #candado.viaje::after { content:''; position:absolute; inset:0; background:radial-gradient(circle at 50% 42%, rgba(205,225,255,.5), transparent 55%); opacity:0; animation:destello 1.7s ease-out forwards; pointer-events:none; }
   @keyframes destello { 0% { opacity:0; } 60% { opacity:.55; } 100% { opacity:0; } }
+  @media (pointer:coarse) { #nota .par, .pal { filter:none; } }
 </style>
 </head>
 <body>
@@ -558,6 +559,7 @@ const camara = new THREE.PerspectiveCamera(40, 1, .1, 50);
 camara.position.set(0, 0.6, 7.6);
 renderer.domElement.addEventListener('wheel', e => { if (scrollY > 8) e.stopImmediatePropagation(); }, { capture: true });   // arriba: la rueda hace zoom a la rosa; ya abajo (pantalla final): desplaza la página
 const ctl = new OrbitControls(camara, renderer.domElement);
+renderer.domElement.style.touchAction = 'pan-y';          // OrbitControls pone «none» y bloquearía el scroll vertical con el dedo sobre la rosa
 ctl.target.set(0, -0.7, 0);
 ctl.enableDamping = true; ctl.enablePan = false; ctl.minDistance = 0.5; ctl.maxDistance = 13;
 ctl.autoRotate = false; ctl.autoRotateSpeed = .7;
@@ -998,11 +1000,11 @@ function bucle() {
   haloEl.style.opacity = (sb * 0.95 * (1 - sc * 0.8)).toFixed(3);
   lienzoRosa.style.filter = sc > 0.01 ? (MOVIL ? '' : 'blur(' + (sc * 5).toFixed(2) + 'px) ') + 'brightness(' + (1 - sc * 0.6).toFixed(3) + ')' : '';   // el desenfoque pesa mucho en celulares
   texto.classList.toggle('oculto', sc > 0.25); elEc.classList.toggle('oculto', sc > 0.25);
-  btnPant.classList.toggle('oculto', sc > 0.25); btnHoy.classList.toggle('oculto', sc > 0.25); if (sc > 0.25) hoyBox.classList.remove('ver');
+  btnPant.classList.toggle('oculto', sc > 0.25); btnMus.classList.toggle('oculto', sc > 0.25); btnHoy.classList.toggle('oculto', sc > 0.25); if (sc > 0.25) hoyBox.classList.remove('ver');
   bajarBtn.classList.toggle('ver', listo && sc < 0.08); subirBtn.classList.toggle('ver', sc > 0.6);
   if (s < T_LLUVIA + DUR_LLUVIA + 5) pintarLluvia(dens);   // cuando ya paró y se secaron los rastros, deja de dibujarla (ahorra batería)
   ctl.update();
-  renderer.render(escena, camara);
+  if (sc < 0.98) renderer.render(escena, camara);          // con la carta a pantalla completa la rosa no se ve: no se dibuja
 }
 bucle();
 ciclo();
